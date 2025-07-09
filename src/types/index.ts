@@ -189,6 +189,58 @@ export interface Pattern {
   }>;
 }
 
+export interface ReviewComment {
+  id: string;
+  drawingId: string;
+  position: Point;
+  thread: CommentMessage[];
+  status: 'open' | 'resolved';
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CommentMessage {
+  id: string;
+  text: string;
+  author: string;
+  timestamp: string;
+  mentions: string[];
+  attachments: string[];
+}
+
+export interface Change {
+  id: string;
+  timestamp: string;
+  user: string;
+  action: 'add' | 'modify' | 'delete';
+  target: {
+    type: 'backing' | 'dimension' | 'note' | 'comment';
+    id: string;
+  };
+  before?: any;
+  after?: any;
+  reason?: string;
+}
+
+export interface Approval {
+  id: string;
+  reviewer: string;
+  timestamp: string;
+  status: 'approved' | 'rejected' | 'conditional';
+  conditions?: string;
+  signature: string;
+  stampPosition?: Point;
+}
+
+export interface UserPresence {
+  userId: string;
+  userName: string;
+  cursor?: Point;
+  lastSeen: string;
+  color: string;
+}
+
 export interface BackingZone {
   id: string;
   components: string[];

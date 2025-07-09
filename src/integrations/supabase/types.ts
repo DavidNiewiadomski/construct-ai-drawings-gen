@@ -14,6 +14,135 @@ export type Database = {
   }
   public: {
     Tables: {
+      approvals: {
+        Row: {
+          conditions: string | null
+          drawing_id: string
+          id: string
+          reviewer: string
+          signature: string | null
+          stamp_position_x: number | null
+          stamp_position_y: number | null
+          status: string
+          timestamp: string
+        }
+        Insert: {
+          conditions?: string | null
+          drawing_id: string
+          id?: string
+          reviewer: string
+          signature?: string | null
+          stamp_position_x?: number | null
+          stamp_position_y?: number | null
+          status: string
+          timestamp?: string
+        }
+        Update: {
+          conditions?: string | null
+          drawing_id?: string
+          id?: string
+          reviewer?: string
+          signature?: string | null
+          stamp_position_x?: number | null
+          stamp_position_y?: number | null
+          status?: string
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approvals_drawing_id_fkey"
+            columns: ["drawing_id"]
+            isOneToOne: false
+            referencedRelation: "uploaded_files"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      change_history: {
+        Row: {
+          action: string
+          after_data: Json | null
+          before_data: Json | null
+          drawing_id: string
+          id: string
+          reason: string | null
+          target_id: string
+          target_type: string
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          after_data?: Json | null
+          before_data?: Json | null
+          drawing_id: string
+          id?: string
+          reason?: string | null
+          target_id: string
+          target_type: string
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          after_data?: Json | null
+          before_data?: Json | null
+          drawing_id?: string
+          id?: string
+          reason?: string | null
+          target_id?: string
+          target_type?: string
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "change_history_drawing_id_fkey"
+            columns: ["drawing_id"]
+            isOneToOne: false
+            referencedRelation: "uploaded_files"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comment_messages: {
+        Row: {
+          attachments: string[] | null
+          author: string
+          comment_id: string
+          created_at: string
+          id: string
+          mentions: string[] | null
+          text: string
+        }
+        Insert: {
+          attachments?: string[] | null
+          author: string
+          comment_id: string
+          created_at?: string
+          id?: string
+          mentions?: string[] | null
+          text: string
+        }
+        Update: {
+          attachments?: string[] | null
+          author?: string
+          comment_id?: string
+          created_at?: string
+          id?: string
+          mentions?: string[] | null
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comment_messages_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "review_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -91,6 +220,47 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      review_comments: {
+        Row: {
+          created_at: string
+          created_by: string
+          drawing_id: string
+          id: string
+          position_x: number
+          position_y: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          drawing_id: string
+          id?: string
+          position_x: number
+          position_y: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          drawing_id?: string
+          id?: string
+          position_x?: number
+          position_y?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_comments_drawing_id_fkey"
+            columns: ["drawing_id"]
+            isOneToOne: false
+            referencedRelation: "uploaded_files"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       uploaded_files: {
         Row: {
