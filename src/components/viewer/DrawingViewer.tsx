@@ -1,5 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Stage, Layer, Rect, Line, Text, Group } from 'react-konva';
+import { Worker, Viewer, DocumentLoadEvent, PageChangeEvent } from '@react-pdf-viewer/core';
+import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
+import '@react-pdf-viewer/core/lib/styles/index.css';
+import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 import { 
   ZoomIn, 
   ZoomOut, 
@@ -21,6 +25,9 @@ import { BackingEditor } from './BackingEditor';
 import { BackingPlacement as BackingType } from '@/types';
 import { constrainPosition, getZoomToFit, Point } from '@/utils/viewerUtils';
 
+// Set up PDF.js worker
+const workerUrl = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
+
 interface DrawingViewerProps {
   drawingUrl?: string;
   backings: BackingType[];
@@ -29,9 +36,12 @@ interface DrawingViewerProps {
 
 export function DrawingViewer({ drawingUrl, backings, onBackingsChange }: DrawingViewerProps) {
   const stageRef = useRef<any>(null);
+  const pdfContainerRef = useRef<HTMLDivElement>(null);
   const [stageSize, setStageSize] = useState({ width: 800, height: 600 });
+  const [pdfDimensions, setPdfDimensions] = useState({ width: 0, height: 0 });
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(!!drawingUrl);
-  const [drawingSize, setDrawingSize] = useState({ width: 1000, height: 800 });
   
   const {
     zoom,
@@ -50,15 +60,19 @@ export function DrawingViewer({ drawingUrl, backings, onBackingsChange }: Drawin
     resetView,
   } = useViewerStore();
 
+  // Default layout plugin
+  const defaultLayoutPluginInstance = defaultLayoutPlugin();
+
   // Handle window resize
   useEffect(() => {
     const updateSize = () => {
       const container = document.getElementById('drawing-viewer-container');
       if (container) {
-        setStageSize({
+        const newSize = {
           width: container.offsetWidth,
           height: container.offsetHeight,
-        });
+        };
+        setStageSize(newSize);
       }
     };
 
@@ -67,34 +81,52 @@ export function DrawingViewer({ drawingUrl, backings, onBackingsChange }: Drawin
     return () => window.removeEventListener('resize', updateSize);
   }, []);
 
-  // Handle zoom with mouse wheel
-  const handleWheel = (e: any) => {
-    e.evt.preventDefault();
+  // Handle PDF document load
+  const handleDocumentLoad = useCallback((e: DocumentLoadEvent) => {
+    setTotalPages(e.doc.numPages);
+    setIsLoading(false);
     
-    const stage = stageRef.current;
-    const pointer = stage.getPointerPosition();
-    const mousePointTo = {
-      x: (pointer.x - position.x) / zoom,
-      y: (pointer.y - position.y) / zoom,
-    };
+    // Get PDF container dimensions for overlay alignment
+    setTimeout(() => {
+      if (pdfContainerRef.current) {
+        const pdfElement = pdfContainerRef.current.querySelector('.rpv-core__page-layer');
+        if (pdfElement) {
+          const rect = pdfElement.getBoundingClientRect();
+          setPdfDimensions({
+            width: rect.width,
+            height: rect.height
+          });
+        }
+      }
+    }, 100);
+  }, []);
 
-    const direction = e.evt.deltaY > 0 ? -1 : 1;
-    const newZoom = zoom * (1 + direction * 0.1);
+  // Handle page change
+  const handlePageChange = useCallback((e: PageChangeEvent) => {
+    setCurrentPage(e.currentPage);
     
-    const newPos = {
-      x: pointer.x - mousePointTo.x * newZoom,
-      y: pointer.y - mousePointTo.y * newZoom,
-    };
+    // Update PDF dimensions when page changes
+    setTimeout(() => {
+      if (pdfContainerRef.current) {
+        const pdfElement = pdfContainerRef.current.querySelector('.rpv-core__page-layer');
+        if (pdfElement) {
+          const rect = pdfElement.getBoundingClientRect();
+          setPdfDimensions({
+            width: rect.width,
+            height: rect.height
+          });
+        }
+      }
+    }, 100);
+  }, []);
 
-    setZoom(newZoom);
-    setPosition(constrainPosition(newPos, newZoom, stageSize, drawingSize));
-  };
-
-  // Handle mouse down for panning and adding backings
+  // Handle mouse down for adding backings
   const handleMouseDown = (e: any) => {
     if (selectedTool === 'add') {
       const stage = stageRef.current;
       const pointer = stage.getPointerPosition();
+      
+      // Convert screen coordinates to PDF coordinates
       const worldPos = {
         x: (pointer.x - position.x) / zoom,
         y: (pointer.y - position.y) / zoom,
@@ -115,25 +147,17 @@ export function DrawingViewer({ drawingUrl, backings, onBackingsChange }: Drawin
     }
   };
 
-  // Handle stage drag for panning
-  const handleStageDrag = (e: any) => {
-    const newPos = {
-      x: e.target.x(),
-      y: e.target.y(),
-    };
-    setPosition(constrainPosition(newPos, zoom, stageSize, drawingSize));
+  // Handle mouse move for tracking cursor
+  const handleMouseMove = (e: any) => {
+    // Can be used for cursor tracking or preview placement
   };
 
-  // Zoom controls
-  const handleZoomIn = () => setZoom(zoom * 1.2);
-  const handleZoomOut = () => setZoom(zoom / 1.2);
-  const handleFitToScreen = () => {
-    const fit = getZoomToFit(drawingSize, stageSize);
-    setZoom(fit.zoom);
-    setPosition(fit.position);
+  // Handle mouse up
+  const handleMouseUp = (e: any) => {
+    // Handle end of interactions
   };
 
-  // Grid rendering
+  // Grid rendering for overlay
   const renderGrid = () => {
     if (!showGrid || !layers.drawing) return null;
 
@@ -149,7 +173,7 @@ export function DrawingViewer({ drawingUrl, backings, onBackingsChange }: Drawin
         <Line
           key={`v-${i}`}
           points={[x, 0, x, stageSize.height]}
-          stroke="rgba(255, 255, 255, 0.1)"
+          stroke="rgba(255, 255, 255, 0.2)"
           strokeWidth={0.5}
         />
       );
@@ -162,7 +186,7 @@ export function DrawingViewer({ drawingUrl, backings, onBackingsChange }: Drawin
         <Line
           key={`h-${i}`}
           points={[0, y, stageSize.width, y]}
-          stroke="rgba(255, 255, 255, 0.1)"
+          stroke="rgba(255, 255, 255, 0.2)"
           strokeWidth={0.5}
         />
       );
@@ -188,40 +212,15 @@ export function DrawingViewer({ drawingUrl, backings, onBackingsChange }: Drawin
       {/* Toolbar */}
       <div className="flex items-center justify-between p-4 bg-card border-b border-border">
         <div className="flex items-center space-x-2">
-          {/* Zoom Controls */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleZoomOut}
-            className="h-8 w-8 p-0"
-          >
-            <ZoomOut className="h-4 w-4" />
-          </Button>
-          
-          <div className="px-2 py-1 text-sm font-mono bg-muted rounded min-w-[60px] text-center">
-            {Math.round(zoom * 100)}%
-          </div>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleZoomIn}
-            className="h-8 w-8 p-0"
-          >
-            <ZoomIn className="h-4 w-4" />
-          </Button>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleFitToScreen}
-            className="h-8 px-3"
-          >
-            <RotateCcw className="h-4 w-4 mr-1" />
-            Fit
-          </Button>
-
-          <Separator orientation="vertical" className="h-6" />
+          {/* PDF Info */}
+          {totalPages > 0 && (
+            <>
+              <div className="px-2 py-1 text-sm bg-muted rounded">
+                Page {currentPage + 1} of {totalPages}
+              </div>
+              <Separator orientation="vertical" className="h-6" />
+            </>
+          )}
 
           {/* Tools */}
           {(['pan', 'select', 'add', 'measure'] as const).map((tool) => (
@@ -267,104 +266,93 @@ export function DrawingViewer({ drawingUrl, backings, onBackingsChange }: Drawin
 
       {/* Main Content */}
       <div className="flex-1 flex">
-        {/* Canvas Area */}
+        {/* PDF Viewer with Overlay */}
         <div className="flex-1 relative">
           <div 
             id="drawing-viewer-container" 
+            ref={pdfContainerRef}
             className="w-full h-full"
             style={{ cursor: selectedTool === 'add' ? 'crosshair' : 'default' }}
           >
-            <Stage
-              ref={stageRef}
-              width={stageSize.width}
-              height={stageSize.height}
-              onWheel={handleWheel}
-              onMouseDown={handleMouseDown}
-              draggable={selectedTool === 'pan'}
-              onDragEnd={handleStageDrag}
-              x={position.x}
-              y={position.y}
-              scaleX={zoom}
-              scaleY={zoom}
-            >
-              {/* Background */}
-              <Layer>
-                <Rect
-                  x={-position.x / zoom}
-                  y={-position.y / zoom}
-                  width={stageSize.width / zoom}
-                  height={stageSize.height / zoom}
-                  fill="#0f172a"
-                />
-              </Layer>
-
-              {/* Grid Layer */}
-              {showGrid && (
-                <Layer>
-                  {renderGrid()}
-                </Layer>
-              )}
-
-              {/* Drawing Layer */}
-              {layers.drawing && (
-                <Layer>
-                  {/* Drawing background */}
-                  <Rect
-                    x={0}
-                    y={0}
-                    width={drawingSize.width}
-                    height={drawingSize.height}
-                    fill="white"
-                    stroke="#ccc"
-                    strokeWidth={1 / zoom}
+            {/* PDF Viewer Layer */}
+            {drawingUrl && (
+              <Worker workerUrl={workerUrl}>
+                <div style={{ height: '100%', position: 'relative' }}>
+                  <Viewer
+                    fileUrl={drawingUrl}
+                    plugins={[defaultLayoutPluginInstance]}
+                    onDocumentLoad={handleDocumentLoad}
+                    onPageChange={handlePageChange}
                   />
                   
-                  {/* Placeholder drawing content */}
-                  <Text
-                    x={drawingSize.width / 2}
-                    y={drawingSize.height / 2}
-                    text="Drawing will be displayed here"
-                    fontSize={16 / zoom}
-                    fill="#666"
-                    align="center"
-                    offsetX={100 / zoom}
-                    offsetY={8 / zoom}
-                  />
-                </Layer>
-              )}
+                  {/* Konva Overlay for Interactive Elements */}
+                  <Stage
+                    ref={stageRef}
+                    style={{ 
+                      position: 'absolute', 
+                      top: 0, 
+                      left: 0,
+                      pointerEvents: selectedTool === 'pan' ? 'none' : 'auto'
+                    }}
+                    width={stageSize.width}
+                    height={stageSize.height}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                  >
+                    {/* Grid Layer */}
+                    {showGrid && (
+                      <Layer>
+                        {renderGrid()}
+                      </Layer>
+                    )}
 
-              {/* Backings Layer */}
-              {layers.backings && (
-                <Layer>
-                  {backings.map((backing) => (
-                    <BackingPlacement
-                      key={backing.id}
-                      backing={backing}
-                      isSelected={selectedBacking === backing.id}
-                      onSelect={() => selectBacking(backing.id)}
-                      onUpdate={(updatedBacking) => {
-                        const updatedBackings = backings.map(b =>
-                          b.id === backing.id ? updatedBacking : b
-                        );
-                        onBackingsChange(updatedBackings);
-                      }}
-                      zoom={zoom}
-                    />
-                  ))}
-                </Layer>
-              )}
-            </Stage>
-          </div>
+                    {/* Backings Layer */}
+                    {layers.backings && (
+                      <Layer>
+                        {backings.map((backing) => (
+                          <BackingPlacement
+                            key={backing.id}
+                            backing={backing}
+                            isSelected={selectedBacking === backing.id}
+                            onSelect={() => selectBacking(backing.id)}
+                            onUpdate={(updatedBacking) => {
+                              const updatedBackings = backings.map(b =>
+                                b.id === backing.id ? updatedBacking : b
+                              );
+                              onBackingsChange(updatedBackings);
+                            }}
+                            zoom={1} // PDF viewer handles its own zoom
+                          />
+                        ))}
+                      </Layer>
+                    )}
+                  </Stage>
+                </div>
+              </Worker>
+            )}
 
-          {/* Loading Overlay */}
-          {isLoading && (
-            <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                <p className="text-sm text-muted-foreground">Loading drawing...</p>
+            {/* No PDF Placeholder */}
+            {!drawingUrl && (
+              <div className="w-full h-full flex items-center justify-center bg-slate-800">
+                <div className="text-center text-muted-foreground">
+                  <Square className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-lg font-medium">No Drawing Selected</p>
+                  <p className="text-sm">Upload a PDF drawing to view and add backings</p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+
+            {/* Loading Overlay */}
+            {isLoading && drawingUrl && (
+              <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-50">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                  <p className="text-sm text-muted-foreground">Loading PDF...</p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Backing Editor Panel */}
