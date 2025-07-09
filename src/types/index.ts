@@ -46,3 +46,29 @@ export interface BackingPlacement {
   orientation: number; // rotation in degrees
   status: 'ai_generated' | 'user_modified' | 'approved';
 }
+
+export interface BackingRule {
+  id: string;
+  componentType: string;
+  condition: {
+    weightMin?: number;
+    weightMax?: number;
+    sizeMin?: number;
+    sizeMax?: number;
+  };
+  backing: {
+    type: string;
+    width: number;
+    height: number;
+    heightAFF: number;
+  };
+  notes?: string;
+}
+
+export interface ProcessingStatus {
+  stage: 'uploading' | 'detecting' | 'analyzing' | 'generating' | 'complete';
+  progress: number;
+  currentFile?: string;
+  message?: string;
+  errors?: string[];
+}
