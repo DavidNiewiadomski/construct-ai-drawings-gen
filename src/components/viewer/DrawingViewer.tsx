@@ -23,7 +23,7 @@ export function DrawingViewer({ drawingUrl, backings, onBackingsChange }: Drawin
   const [stageSize, setStageSize] = useState({ width: 800, height: 600 });
   const [currentMousePosition, setCurrentMousePosition] = useState<{ x: number; y: number } | null>(null);
   
-  const { selectedTool, selectedBacking, layers, selectBacking } = useViewerStore();
+  const { tool: selectedTool, selectedBackingId: selectedBacking, layers, selectBacking } = useViewerStore();
   
   // Custom hooks for managing different aspects
   const {

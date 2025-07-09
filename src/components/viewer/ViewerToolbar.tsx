@@ -57,12 +57,12 @@ export function ViewerToolbar({
   
   const {
     zoom,
-    selectedTool,
-    showGrid,
+    tool: selectedTool,
+    gridEnabled: showGrid,
     gridSize,
     layers,
     setZoom,
-    selectTool,
+    setTool: selectTool,
     toggleLayer,
     toggleGrid,
     setGridSize,

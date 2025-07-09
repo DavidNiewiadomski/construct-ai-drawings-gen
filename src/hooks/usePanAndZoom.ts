@@ -4,7 +4,7 @@ import { constrainPosition, getZoomToFit } from '@/utils/viewerUtils';
 import { coordinateSystem } from '@/utils/coordinateSystem';
 
 export function usePanAndZoom(stageSize: { width: number; height: number }, pdfDimensions: { width: number; height: number }) {
-  const { zoom, position, setZoom, setPosition } = useViewerStore();
+  const { zoom, pan: position, setZoom, setPan: setPosition } = useViewerStore();
 
   // Handle zoom to fit
   const handleZoomToFit = useCallback(() => {

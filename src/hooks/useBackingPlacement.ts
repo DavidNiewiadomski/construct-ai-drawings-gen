@@ -7,7 +7,7 @@ export function useBackingPlacement(
   backings: BackingType[],
   onBackingsChange: (backings: BackingType[]) => void
 ) {
-  const { position, showGrid, gridSize, selectBacking } = useViewerStore();
+  const { pan: position, gridEnabled: showGrid, gridSize, selectBacking } = useViewerStore();
 
   // Handle adding a new backing
   const handleAddBacking = useCallback((pointer: { x: number; y: number }) => {

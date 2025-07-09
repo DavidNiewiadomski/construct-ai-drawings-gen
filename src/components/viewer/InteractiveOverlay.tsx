@@ -51,9 +51,9 @@ export function InteractiveOverlay({
 }: InteractiveOverlayProps) {
   const stageRef = useRef<any>(null);
   const {
-    selectedTool,
-    selectedBacking,
-    showGrid,
+    tool: selectedTool,
+    selectedBackingId: selectedBacking,
+    gridEnabled: showGrid,
     gridSize,
     layers,
     selectBacking
