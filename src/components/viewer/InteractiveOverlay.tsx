@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef } from 'react';
 import { Stage, Layer } from 'react-konva';
 import { useViewerStore } from '@/stores/viewerStore';
 import { BackingOverlay } from './BackingOverlay';

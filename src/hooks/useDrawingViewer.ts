@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { DocumentLoadEvent, PageChangeEvent } from '@react-pdf-viewer/core';
 import { coordinateSystem } from '@/utils/coordinateSystem';
 
@@ -9,27 +9,6 @@ export function useDrawingViewer() {
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [drawingOpacity, setDrawingOpacity] = useState(100);
-
-  // Handle PDF document load
-  const handleDocumentLoad = useCallback((e: DocumentLoadEvent) => {
-    setTotalPages(e.doc.numPages);
-    setIsLoading(false);
-    
-    // Get PDF container dimensions for overlay alignment
-    setTimeout(() => {
-      updatePdfDimensions();
-    }, 100);
-  }, []);
-
-  // Handle page change
-  const handlePageChange = useCallback((e: PageChangeEvent) => {
-    setCurrentPage(e.currentPage);
-    
-    // Update PDF dimensions when page changes
-    setTimeout(() => {
-      updatePdfDimensions();
-    }, 100);
-  }, []);
 
   // Update PDF dimensions and coordinate system
   const updatePdfDimensions = useCallback(() => {
@@ -56,6 +35,27 @@ export function useDrawingViewer() {
       }
     }
   }, []);
+
+  // Handle PDF document load
+  const handleDocumentLoad = useCallback((e: DocumentLoadEvent) => {
+    setTotalPages(e.doc.numPages);
+    setIsLoading(false);
+    
+    // Get PDF container dimensions for overlay alignment
+    setTimeout(() => {
+      updatePdfDimensions();
+    }, 100);
+  }, [updatePdfDimensions]);
+
+  // Handle page change
+  const handlePageChange = useCallback((e: PageChangeEvent) => {
+    setCurrentPage(e.currentPage);
+    
+    // Update PDF dimensions when page changes
+    setTimeout(() => {
+      updatePdfDimensions();
+    }, 100);
+  }, [updatePdfDimensions]);
 
   // Handle page navigation from toolbar
   const handlePageNavigation = useCallback((page: number) => {
