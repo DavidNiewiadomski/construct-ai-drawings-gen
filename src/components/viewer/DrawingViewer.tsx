@@ -6,7 +6,7 @@ import '@react-pdf-viewer/core/lib/styles/index.css';
 import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 import { Square } from 'lucide-react';
 import { useViewerStore } from '@/stores/viewerStore';
-import { BackingPlacement } from './BackingPlacement';
+import { BackingOverlay } from './BackingOverlay';
 import { BackingEditor } from './BackingEditor';
 import { ViewerToolbar } from './ViewerToolbar';
 import { BackingPlacement as BackingType } from '@/types';
@@ -35,6 +35,7 @@ export function DrawingViewer({ drawingUrl, backings, onBackingsChange }: Drawin
     selectedTool,
     selectedBacking,
     showGrid,
+    gridSize,
     layers,
     selectBacking,
   } = useViewerStore();
@@ -153,7 +154,7 @@ export function DrawingViewer({ drawingUrl, backings, onBackingsChange }: Drawin
     if (!showGrid) return null;
 
     const lines = [];
-    const gridSpacing = 50; // Fixed grid spacing for overlay
+    const gridSpacing = gridSize; // Use actual grid size from store
     
     // Vertical lines
     for (let i = 0; i < Math.ceil(stageSize.width / gridSpacing) + 1; i++) {
@@ -251,21 +252,19 @@ export function DrawingViewer({ drawingUrl, backings, onBackingsChange }: Drawin
                     {/* Backings Layer */}
                     {layers.backings && (
                       <Layer>
-                        {backings.map((backing) => (
-                          <BackingPlacement
-                            key={backing.id}
-                            backing={backing}
-                            isSelected={selectedBacking === backing.id}
-                            onSelect={() => selectBacking(backing.id)}
-                            onUpdate={(updatedBacking) => {
-                              const updatedBackings = backings.map(b =>
-                                b.id === backing.id ? updatedBacking : b
-                              );
-                              onBackingsChange(updatedBackings);
-                            }}
-                            zoom={1} // PDF viewer handles its own zoom
-                          />
-                        ))}
+                        <BackingOverlay
+                          backings={backings}
+                          selectedBackingId={selectedBacking}
+                          onBackingSelect={selectBacking}
+                          onBackingUpdate={(updatedBacking) => {
+                            const updatedBackings = backings.map(b =>
+                              b.id === updatedBacking.id ? updatedBacking : b
+                            );
+                            onBackingsChange(updatedBackings);
+                          }}
+                          gridSize={gridSize}
+                          zoom={1}
+                        />
                       </Layer>
                     )}
                   </Stage>
