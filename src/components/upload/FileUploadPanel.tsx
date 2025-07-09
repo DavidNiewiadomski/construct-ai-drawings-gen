@@ -21,9 +21,10 @@ const ACCEPTED_EXTENSIONS = ['.pdf', '.dwg', '.dxf', '.ifc', '.rvt'];
 interface FileUploadPanelProps {
   files: UploadedFile[];
   onFilesChange: (files: UploadedFile[]) => void;
+  onStartTutorial?: () => void;
 }
 
-export function FileUploadPanel({ files, onFilesChange }: FileUploadPanelProps) {
+export function FileUploadPanel({ files, onFilesChange, onStartTutorial }: FileUploadPanelProps) {
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [processing, setProcessing] = useState(false);

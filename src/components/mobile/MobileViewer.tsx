@@ -49,14 +49,14 @@ export function MobileViewer({ drawingUrl, backings, onBackingsChange }: MobileV
   });
   
   // Touch handling state
-  const [touches, setTouches] = useState<TouchList | null>(null);
+  const [touches, setTouches] = useState<React.TouchList | null>(null);
   const [lastDistance, setLastDistance] = useState(0);
   const [lastAngle, setLastAngle] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [showBackings, setShowBackings] = useState(true);
 
   // Calculate distance between two touches
-  const getTouchDistance = (touches: TouchList): number => {
+  const getTouchDistance = (touches: React.TouchList): number => {
     if (touches.length < 2) return 0;
     const touch1 = touches[0];
     const touch2 = touches[1];
@@ -67,7 +67,7 @@ export function MobileViewer({ drawingUrl, backings, onBackingsChange }: MobileV
   };
 
   // Calculate angle between two touches
-  const getTouchAngle = (touches: TouchList): number => {
+  const getTouchAngle = (touches: React.TouchList): number => {
     if (touches.length < 2) return 0;
     const touch1 = touches[0];
     const touch2 = touches[1];
@@ -98,10 +98,10 @@ export function MobileViewer({ drawingUrl, backings, onBackingsChange }: MobileV
         const y = (touchList[0].clientY - rect.top - transform.panY) / transform.scale;
         
         const touchedBacking = backings.find(backing => 
-          x >= backing.position.x && 
-          x <= backing.position.x + backing.size.width &&
-          y >= backing.position.y && 
-          y <= backing.position.y + backing.size.height
+          x >= backing.location.x && 
+          x <= backing.location.x + backing.dimensions.width &&
+          y >= backing.location.y && 
+          y <= backing.location.y + backing.dimensions.height
         );
         
         if (touchedBacking) {
@@ -297,13 +297,13 @@ export function MobileViewer({ drawingUrl, backings, onBackingsChange }: MobileV
                       >
                         <div className="space-y-1">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium">{backing.component.type}</span>
+                            <span className="text-sm font-medium">{backing.componentId}</span>
                             <Badge variant="secondary" className="text-xs">
-                              {backing.lumberSize}
+                              {backing.backingType}
                             </Badge>
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            {backing.size.width}" × {backing.size.height}"
+                            {backing.dimensions.width}" × {backing.dimensions.height}"
                           </p>
                         </div>
                       </Card>
@@ -363,10 +363,10 @@ export function MobileViewer({ drawingUrl, backings, onBackingsChange }: MobileV
               selectedBacking === backing.id ? 'border-primary' : 'border-primary/50'
             }`}
             style={{
-              left: `${backing.position.x * transform.scale + transform.panX}px`,
-              top: `${backing.position.y * transform.scale + transform.panY}px`,
-              width: `${backing.size.width * transform.scale}px`,
-              height: `${backing.size.height * transform.scale}px`,
+              left: `${backing.location.x * transform.scale + transform.panX}px`,
+              top: `${backing.location.y * transform.scale + transform.panY}px`,
+              width: `${backing.dimensions.width * transform.scale}px`,
+              height: `${backing.dimensions.height * transform.scale}px`,
               transform: `rotate(${transform.rotation}deg)`
             }}
             onClick={() => {
@@ -376,7 +376,7 @@ export function MobileViewer({ drawingUrl, backings, onBackingsChange }: MobileV
           >
             <div className="absolute top-1 left-1">
               <Badge variant="secondary" className="text-xs">
-                {backing.lumberSize}
+                {backing.backingType}
               </Badge>
             </div>
           </div>
@@ -429,43 +429,41 @@ export function MobileViewer({ drawingUrl, backings, onBackingsChange }: MobileV
 
               <div className="space-y-3">
                 <div>
-                  <label className="text-sm font-medium">Component Type</label>
-                  <p className="text-sm text-muted-foreground">{selectedBackingData.component.type}</p>
+                  <label className="text-sm font-medium">Component ID</label>
+                  <p className="text-sm text-muted-foreground">{selectedBackingData.componentId}</p>
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium">Lumber Size</label>
-                  <p className="text-sm text-muted-foreground">{selectedBackingData.lumberSize}</p>
+                  <label className="text-sm font-medium">Backing Type</label>
+                  <p className="text-sm text-muted-foreground">{selectedBackingData.backingType}</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium">Width</label>
-                    <p className="text-sm text-muted-foreground">{selectedBackingData.size.width}"</p>
+                    <p className="text-sm text-muted-foreground">{selectedBackingData.dimensions.width}"</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium">Height</label>
-                    <p className="text-sm text-muted-foreground">{selectedBackingData.size.height}"</p>
+                    <p className="text-sm text-muted-foreground">{selectedBackingData.dimensions.height}"</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium">X Position</label>
-                    <p className="text-sm text-muted-foreground">{Math.round(selectedBackingData.position.x)}</p>
+                    <p className="text-sm text-muted-foreground">{Math.round(selectedBackingData.location.x)}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium">Y Position</label>
-                    <p className="text-sm text-muted-foreground">{Math.round(selectedBackingData.position.y)}</p>
+                    <p className="text-sm text-muted-foreground">{Math.round(selectedBackingData.location.y)}</p>
                   </div>
                 </div>
 
-                {selectedBackingData.notes && (
-                  <div>
-                    <label className="text-sm font-medium">Notes</label>
-                    <p className="text-sm text-muted-foreground">{selectedBackingData.notes}</p>
-                  </div>
-                )}
+                <div>
+                  <label className="text-sm font-medium">Status</label>
+                  <p className="text-sm text-muted-foreground">{selectedBackingData.status}</p>
+                </div>
               </div>
             </div>
           )}
