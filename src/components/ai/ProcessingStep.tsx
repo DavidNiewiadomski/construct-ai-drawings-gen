@@ -4,13 +4,13 @@ import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { DetectedComponent } from '@/types';
+import { AIDetectedComponent } from '@/types';
 import { FileCard } from '@/stores/uploadStore';
 
 interface ProcessingStepProps {
   selectedFiles: FileCard[];
   isProcessing: boolean;
-  onProcessingComplete: (components: DetectedComponent[]) => void;
+  onProcessingComplete: (components: AIDetectedComponent[]) => void;
   onCancel?: () => void;
 }
 
@@ -69,13 +69,13 @@ const processingStages = [
 ];
 
 // Mock detected components for demo
-const generateMockComponents = (fileCount: number): DetectedComponent[] => {
+const generateMockComponents = (fileCount: number): AIDetectedComponent[] => {
   const componentTypes = [
     'Outlet', 'Switch', 'Light Fixture', 'Panel', 'Junction Box',
     'Receptacle', 'Disconnect', 'Motor', 'Transformer', 'Conduit Run'
   ];
   
-  const components: DetectedComponent[] = [];
+  const components: AIDetectedComponent[] = [];
   
   for (let i = 0; i < fileCount * 8; i++) {
     components.push({

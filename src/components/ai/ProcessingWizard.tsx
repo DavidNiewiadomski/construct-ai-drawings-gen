@@ -10,7 +10,7 @@ import { DetectionReviewStep } from './DetectionReviewStep';
 import { BackingGenerationStep } from './BackingGenerationStep';
 import { FinalReviewStep } from './FinalReviewStep';
 import { FileCard } from '@/stores/uploadStore';
-import { DetectedComponent, BackingRule, BackingPlacement } from '@/types';
+import { AIDetectedComponent, AIBackingRule, AIBackingPlacement } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
 const WIZARD_STEPS = [
@@ -49,8 +49,8 @@ const WIZARD_STEPS = [
 interface ProcessingWizardProps {
   onComplete: (data: {
     selectedFiles: FileCard[];
-    detectedComponents: DetectedComponent[];
-    backingPlacements: BackingPlacement[];
+    detectedComponents: AIDetectedComponent[];
+    backingPlacements: AIBackingPlacement[];
   }) => void;
   onCancel: () => void;
 }
@@ -58,9 +58,9 @@ interface ProcessingWizardProps {
 export function ProcessingWizard({ onComplete, onCancel }: ProcessingWizardProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedFiles, setSelectedFiles] = useState<FileCard[]>([]);
-  const [detectedComponents, setDetectedComponents] = useState<DetectedComponent[]>([]);
-  const [backingRules, setBackingRules] = useState<BackingRule[]>([]);
-  const [backingPlacements, setBackingPlacements] = useState<BackingPlacement[]>([]);
+  const [detectedComponents, setDetectedComponents] = useState<AIDetectedComponent[]>([]);
+  const [backingRules, setBackingRules] = useState<AIBackingRule[]>([]);
+  const [backingPlacements, setBackingPlacements] = useState<AIBackingPlacement[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 

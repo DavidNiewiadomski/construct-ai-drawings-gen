@@ -15,44 +15,54 @@ export interface UploadedFile {
 
 export interface DetectedComponent {
   id: string;
-  type: string;
-  confidence: number;
-  position: Point;
-  bounds?: {
+  fileId: string;
+  pageNumber: number;
+  componentType: 'tv' | 'fire_extinguisher' | 'sink' | 'grab_bar' | 'cabinet' | 'equipment' | 'other';
+  boundingBox: {
     x: number;
     y: number;
     width: number;
     height: number;
   };
-  drawingId: string;
-  confirmed: boolean;
-  needsBacking: boolean;
-  properties?: Record<string, any>;
+  text: string;
+  confidence: number;
+  specifications?: Record<string, any>;
 }
 
 export interface BackingPlacement {
   id: string;
   componentId: string;
-  ruleId: string;
-  position: Point;
-  size: { width: number; height: number };
-  material: string;
-  thickness: number;
-  notes?: string;
-  drawingId: string;
+  backingType: '2x4' | '2x6' | '2x8' | '2x10' | '3/4_plywood' | 'steel_plate' | 'blocking';
+  dimensions: {
+    width: number;
+    height: number;
+    thickness: number;
+  };
+  location: {
+    x: number;
+    y: number;
+    z: number; // height above floor
+  };
+  orientation: number; // rotation in degrees
+  status: 'ai_generated' | 'user_modified' | 'approved';
 }
 
 export interface BackingRule {
   id: string;
-  name: string;
-  componentTypes: string[];
-  material: string;
-  thickness: number;
-  minSize: { width: number; height: number };
-  maxSize: { width: number; height: number };
-  margin: number;
-  priority: number;
-  conditions?: Record<string, any>;
+  componentType: string;
+  condition: {
+    weightMin?: number;
+    weightMax?: number;
+    sizeMin?: number;
+    sizeMax?: number;
+  };
+  backing: {
+    type: string;
+    width: number;
+    height: number;
+    heightAFF: number;
+  };
+  notes?: string;
 }
 
 export interface ProcessingStatus {
@@ -257,4 +267,47 @@ export interface Dimension {
   value: number;
   label: string;
   type: 'linear' | 'radial' | 'angular';
+}
+
+// AI Processing Wizard Types (separate from existing types to avoid conflicts)
+export interface AIDetectedComponent {
+  id: string;
+  type: string;
+  confidence: number;
+  position: Point;
+  bounds?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  drawingId: string;
+  confirmed: boolean;
+  needsBacking: boolean;
+  properties?: Record<string, any>;
+}
+
+export interface AIBackingRule {
+  id: string;
+  name: string;
+  componentTypes: string[];
+  material: string;
+  thickness: number;
+  minSize: { width: number; height: number };
+  maxSize: { width: number; height: number };
+  margin: number;
+  priority: number;
+  conditions?: Record<string, any>;
+}
+
+export interface AIBackingPlacement {
+  id: string;
+  componentId: string;
+  ruleId: string;
+  position: Point;
+  size: { width: number; height: number };
+  material: string;
+  thickness: number;
+  notes?: string;
+  drawingId: string;
 }

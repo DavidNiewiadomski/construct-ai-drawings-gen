@@ -5,18 +5,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { BackingRule, BackingPlacement, DetectedComponent } from '@/types';
+import { AIBackingRule, AIBackingPlacement, AIDetectedComponent } from '@/types';
 
 interface BackingGenerationStepProps {
-  detectedComponents: DetectedComponent[];
-  backingRules: BackingRule[];
-  onRulesChange: (rules: BackingRule[]) => void;
-  backingPlacements: BackingPlacement[];
-  onPlacementsChange: (placements: BackingPlacement[]) => void;
+  detectedComponents: AIDetectedComponent[];
+  backingRules: AIBackingRule[];
+  onRulesChange: (rules: AIBackingRule[]) => void;
+  backingPlacements: AIBackingPlacement[];
+  onPlacementsChange: (placements: AIBackingPlacement[]) => void;
 }
 
 // Mock backing rules for demo
-const DEFAULT_BACKING_RULES: BackingRule[] = [
+const DEFAULT_BACKING_RULES: AIBackingRule[] = [
   {
     id: 'rule-1',
     name: 'Standard Outlet Backing',
@@ -63,8 +63,8 @@ const DEFAULT_BACKING_RULES: BackingRule[] = [
   }
 ];
 
-const generateMockPlacements = (components: DetectedComponent[], rules: BackingRule[]): BackingPlacement[] => {
-  const placements: BackingPlacement[] = [];
+const generateMockPlacements = (components: AIDetectedComponent[], rules: AIBackingRule[]): AIBackingPlacement[] => {
+  const placements: AIBackingPlacement[] = [];
   
   components.filter(c => c.confirmed && c.needsBacking).forEach((component, index) => {
     const applicableRule = rules.find(rule => 

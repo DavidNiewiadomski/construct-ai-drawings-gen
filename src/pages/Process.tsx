@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { ProcessingWizard } from '@/components/ai/ProcessingWizard';
-import { DetectedComponent, BackingPlacement } from '@/types';
+import { AIDetectedComponent, AIBackingPlacement } from '@/types';
 import { FileCard } from '@/stores/uploadStore';
 import { useToast } from '@/hooks/use-toast';
 
@@ -10,8 +10,8 @@ export default function Process() {
 
   const handleWizardComplete = (data: {
     selectedFiles: FileCard[];
-    detectedComponents: DetectedComponent[];
-    backingPlacements: BackingPlacement[];
+    detectedComponents: AIDetectedComponent[];
+    backingPlacements: AIBackingPlacement[];
   }) => {
     // Save results to localStorage for the main editor
     localStorage.setItem('processedFiles', JSON.stringify(data.selectedFiles));

@@ -3,13 +3,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { DetectedComponent, BackingPlacement } from '@/types';
+import { AIDetectedComponent, AIBackingPlacement } from '@/types';
 import { FileCard } from '@/stores/uploadStore';
 
 interface FinalReviewStepProps {
   selectedFiles: FileCard[];
-  detectedComponents: DetectedComponent[];
-  backingPlacements: BackingPlacement[];
+  detectedComponents: AIDetectedComponent[];
+  backingPlacements: AIBackingPlacement[];
   onComplete: () => void;
 }
 
@@ -30,7 +30,7 @@ export function FinalReviewStep({
     }
     acc[material].push(placement);
     return acc;
-  }, {} as Record<string, BackingPlacement[]>);
+  }, {} as Record<string, AIBackingPlacement[]>);
 
   // Calculate material quantities
   const materialSummary = Object.entries(placementsByMaterial).map(([material, placements]) => {
