@@ -14,7 +14,126 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          company_name: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          company_name: string
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          company_name?: string
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          client_name: string
+          created_at: string
+          deadline: string | null
+          description: string | null
+          id: string
+          name: string
+          owner_id: string
+          project_number: string
+          status: Database["public"]["Enums"]["project_status"]
+          team_members: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          client_name: string
+          created_at?: string
+          deadline?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          owner_id: string
+          project_number: string
+          status?: Database["public"]["Enums"]["project_status"]
+          team_members?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          client_name?: string
+          created_at?: string
+          deadline?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          owner_id?: string
+          project_number?: string
+          status?: Database["public"]["Enums"]["project_status"]
+          team_members?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      uploaded_files: {
+        Row: {
+          file_name: string
+          file_size: number
+          file_type: Database["public"]["Enums"]["file_type"]
+          file_url: string
+          id: string
+          metadata: Json | null
+          mime_type: string
+          processing_status: Database["public"]["Enums"]["processing_status"]
+          project_id: string
+          uploaded_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          file_name: string
+          file_size: number
+          file_type: Database["public"]["Enums"]["file_type"]
+          file_url: string
+          id?: string
+          metadata?: Json | null
+          mime_type: string
+          processing_status?: Database["public"]["Enums"]["processing_status"]
+          project_id: string
+          uploaded_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          file_name?: string
+          file_size?: number
+          file_type?: Database["public"]["Enums"]["file_type"]
+          file_url?: string
+          id?: string
+          metadata?: Json | null
+          mime_type?: string
+          processing_status?: Database["public"]["Enums"]["processing_status"]
+          project_id?: string
+          uploaded_at?: string
+          uploaded_by?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +142,20 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "engineer" | "reviewer" | "viewer"
+      file_type:
+        | "contract_drawing"
+        | "shop_drawing"
+        | "submittal"
+        | "specification"
+        | "bim_model"
+      processing_status: "pending" | "processing" | "completed" | "failed"
+      project_status:
+        | "draft"
+        | "processing"
+        | "review"
+        | "approved"
+        | "completed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +282,23 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "engineer", "reviewer", "viewer"],
+      file_type: [
+        "contract_drawing",
+        "shop_drawing",
+        "submittal",
+        "specification",
+        "bim_model",
+      ],
+      processing_status: ["pending", "processing", "completed", "failed"],
+      project_status: [
+        "draft",
+        "processing",
+        "review",
+        "approved",
+        "completed",
+      ],
+    },
   },
 } as const
