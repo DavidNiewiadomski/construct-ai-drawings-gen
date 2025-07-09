@@ -156,3 +156,54 @@ export interface TitleBlockConfig {
   logoUrl?: string;
   position: 'bottom' | 'right';
 }
+
+export interface Point {
+  x: number;
+  y: number;
+}
+
+export interface WallSegment {
+  id: string;
+  start: Point;
+  end: Point;
+  thickness: number;
+  type: 'interior' | 'exterior' | 'partition';
+}
+
+export interface Clash {
+  id: string;
+  type: 'backing_overlap' | 'door_swing' | 'window' | 'mep' | 'structural';
+  severity: 'error' | 'warning';
+  items: string[]; // IDs of clashing elements
+  resolution?: string;
+}
+
+export interface Pattern {
+  id: string;
+  name: string;
+  roomType: string;
+  components: Array<{
+    type: string;
+    relativePosition: Point;
+    backing: BackingRule;
+  }>;
+}
+
+export interface BackingZone {
+  id: string;
+  components: string[];
+  combinedBacking: BackingPlacement;
+  savings: {
+    material: number;
+    laborHours: number;
+  };
+}
+
+export interface Dimension {
+  id: string;
+  start: Point;
+  end: Point;
+  value: number;
+  label: string;
+  type: 'linear' | 'radial' | 'angular';
+}
