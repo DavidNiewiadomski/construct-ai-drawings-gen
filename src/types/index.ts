@@ -72,3 +72,35 @@ export interface ProcessingStatus {
   message?: string;
   errors?: string[];
 }
+
+export interface ExtractedRequirement {
+  id: string;
+  fileId: string;
+  section: string;
+  text: string;
+  pageNumber: number;
+  boundingBox: Rectangle;
+  parsedValues?: {
+    componentType?: string;
+    backingType?: string;
+    dimensions?: string;
+    heightAFF?: number;
+  };
+  confidence: number;
+  applied: boolean;
+}
+
+export interface Rectangle {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface SearchResult {
+  id: string;
+  text: string;
+  pageNumber: number;
+  boundingBox: Rectangle;
+  context: string;
+}
