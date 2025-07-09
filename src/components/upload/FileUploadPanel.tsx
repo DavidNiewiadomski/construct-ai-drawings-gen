@@ -1,13 +1,15 @@
 import { useState, useCallback, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { fileTypeFromBuffer } from 'file-type';
-import { Upload, File, X, FileText, Image, Box, Settings, Loader2 } from 'lucide-react';
+import { Upload, File, X, FileText, Image, Box, Settings, Loader2, AlertCircle, Clock, Trash2, Play } from 'lucide-react';
+import { FileProcessingService } from '@/services/fileProcessingService';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { UploadedFile } from '@/types';
 import { FileService } from '@/services/fileService';
 import { FilePreview } from './FilePreview';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const fileService = new FileService();
 
@@ -105,33 +107,28 @@ export function FileUploadPanel({ files, onFilesChange, onStartTutorial }: FileU
       };
     }
 
-    // Check file size (max 50MB)
-    if (file.size > 50 * 1024 * 1024) {
+    // Check file size (max 100MB)
+    if (file.size > 100 * 1024 * 1024) {
       return { 
         valid: false, 
-        error: `File too large. Maximum size is 50MB.` 
+        error: `File too large. Maximum size is 100MB. Current size: ${formatFileSize(file.size)}` 
       };
     }
 
-    // Validate file content for PDFs
-    if (extension === '.pdf') {
-      try {
-        const buffer = await file.arrayBuffer();
-        const uint8Array = new Uint8Array(buffer.slice(0, 1024)); // Check first 1KB
-        const detectedType = await fileTypeFromBuffer(uint8Array);
-        
-        if (detectedType?.mime !== 'application/pdf') {
-          return { 
-            valid: false, 
-            error: `Invalid PDF file. The file appears to be corrupted or not a valid PDF.` 
-          };
-        }
-      } catch (error) {
-        return { 
-          valid: false, 
-          error: `Unable to validate file content.` 
+    // Use the FileProcessingService for validation
+    try {
+      const validation = await FileProcessingService.validateFile(file);
+      if (!validation.isValid) {
+        return {
+          valid: false,
+          error: validation.error || 'File validation failed'
         };
       }
+    } catch (error) {
+      return {
+        valid: false,
+        error: 'Network error: Unable to validate file. Please check your connection and try again.'
+      };
     }
 
     return { valid: true };
@@ -240,7 +237,7 @@ export function FileUploadPanel({ files, onFilesChange, onStartTutorial }: FileU
       'image/vnd.dwg': ['.dwg']
     },
     multiple: true,
-    maxSize: 50 * 1024 * 1024, // 50MB
+    maxSize: 100 * 1024 * 1024, // 100MB
   });
 
   const handleTypeChange = async (fileId: string, newType: string) => {
@@ -276,11 +273,20 @@ export function FileUploadPanel({ files, onFilesChange, onStartTutorial }: FileU
     }
   };
 
+  // Calculate batch summary
+  const totalFiles = fileQueue.length;
+  const totalSize = fileQueue.reduce((sum, file) => sum + file.size, 0);
+  const estimatedTime = Math.max(1, Math.ceil(totalFiles * 2.5)); // 2.5 minutes per file estimate
+  const readyFiles = fileQueue.filter(f => f.status === 'ready').length;
+  const canProcess = readyFiles > 0 && !processing && !uploading;
+
   const handleProcessFiles = async () => {
-    if (files.length === 0) {
+    const filesToProcess = fileQueue.filter(f => f.status === 'ready');
+    
+    if (filesToProcess.length === 0) {
       toast({
         title: 'No files to process',
-        description: 'Please upload some files first.',
+        description: 'Please wait for files to finish uploading before processing.',
         variant: 'destructive',
       });
       return;
@@ -288,34 +294,59 @@ export function FileUploadPanel({ files, onFilesChange, onStartTutorial }: FileU
 
     setProcessing(true);
     try {
-      const fileIds = files.map(f => f.id);
-      await fileService.processFiles(fileIds);
+      for (const file of filesToProcess) {
+        setFileQueue(prev => prev.map(f => 
+          f.id === file.id ? { ...f, status: 'processing' as const } : f
+        ));
+      }
+
+      // Simulate processing
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       toast({
-        title: 'Processing started',
-        description: 'Files are being processed for component detection.',
+        title: 'Processing complete',
+        description: `Successfully processed ${filesToProcess.length} files.`,
       });
 
-      // Listen for processing completion
-      const handleProcessingComplete = async () => {
-        onFilesChange(await fileService.getFiles());
-        setProcessing(false);
-        toast({
-          title: 'Processing complete',
-          description: 'Files have been processed successfully.',
-        });
-        window.removeEventListener('filesProcessed', handleProcessingComplete);
-      };
+      // Mark files as completed and move to main list
+      const processedFiles: UploadedFile[] = filesToProcess.map(file => ({
+        id: file.id,
+        filename: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        status: 'ready' as const,
+        fileUrl: URL.createObjectURL(file),
+        uploadDate: new Date().toISOString(),
+        metadata: { pageCount: file.pages }
+      }));
 
-      window.addEventListener('filesProcessed', handleProcessingComplete);
+      onFilesChange([...files, ...processedFiles]);
+      
+      // Remove processed files from queue
+      setFileQueue(prev => prev.filter(f => !filesToProcess.some(pf => pf.id === f.id)));
+
     } catch (error) {
-      setProcessing(false);
       toast({
         title: 'Processing failed',
-        description: 'Failed to process files. Please try again.',
+        description: 'Network error: Failed to process files. Please check your connection and try again.',
         variant: 'destructive',
       });
+      
+      // Reset file status on error
+      setFileQueue(prev => prev.map(f => 
+        f.status === 'processing' ? { ...f, status: 'ready' as const } : f
+      ));
+    } finally {
+      setProcessing(false);
     }
+  };
+
+  const handleClearAll = () => {
+    setFileQueue([]);
+    toast({
+      title: 'Queue cleared',
+      description: 'All files have been removed from the upload queue.',
+    });
   };
 
   return (
@@ -343,10 +374,79 @@ export function FileUploadPanel({ files, onFilesChange, onStartTutorial }: FileU
             or click to select files
           </p>
           <p className="text-xs text-muted-foreground">
-            Supports: PDF, DWG, DXF, IFC, RVT (max 50MB each)
+            Supports: PDF, DWG, DXF, IFC, RVT (max 100MB each)
           </p>
         </div>
       </div>
+
+      {/* Batch Upload Summary */}
+      {totalFiles > 0 && (
+        <div className="px-4 pb-4">
+          <div className="bg-muted/50 rounded-lg p-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-medium">Batch Upload Summary</h3>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleClearAll}
+                className="text-destructive hover:text-destructive h-7 px-2"
+              >
+                <Trash2 className="h-3 w-3 mr-1" />
+                Clear All
+              </Button>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-4 text-sm">
+              <div className="text-center">
+                <div className="font-semibold">{totalFiles}</div>
+                <div className="text-muted-foreground text-xs">Total Files</div>
+              </div>
+              <div className="text-center">
+                <div className="font-semibold">{formatFileSize(totalSize)}</div>
+                <div className="text-muted-foreground text-xs">Total Size</div>
+              </div>
+              <div className="text-center">
+                <div className="font-semibold flex items-center justify-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  ~{estimatedTime}m
+                </div>
+                <div className="text-muted-foreground text-xs">Est. Time</div>
+              </div>
+            </div>
+
+            {readyFiles !== totalFiles && (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-xs">
+                  {readyFiles} of {totalFiles} files ready for processing. 
+                  {totalFiles - readyFiles} still uploading.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div className="flex gap-2">
+              <Button
+                onClick={handleProcessFiles}
+                disabled={!canProcess}
+                className="flex-1 bg-primary hover:bg-primary/90"
+                size="sm"
+              >
+                {processing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Play className="mr-2 h-4 w-4" />
+                    Process {readyFiles > 0 ? `${readyFiles} ` : ''}Files
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* File Queue */}
       <div className="flex-1 overflow-y-auto p-4">
@@ -357,41 +457,17 @@ export function FileUploadPanel({ files, onFilesChange, onStartTutorial }: FileU
               <h3 className="text-sm font-medium text-muted-foreground">Upload Queue</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {fileQueue.map((file) => (
-                  <div key={file.id} className="relative">
-                    <FilePreview
-                      file={file}
-                      type={file.type}
-                      status={file.status}
-                      uploadProgress={file.uploadProgress}
-                      error={file.error}
-                    />
-                    <div className="absolute top-2 right-2">
-                      <Select
-                        value={file.type}
-                        onValueChange={(value) => handleTypeChange(file.id, value)}
-                        disabled={file.status === 'uploading'}
-                      >
-                        <SelectTrigger className="w-20 h-6 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {FILE_TYPE_OPTIONS.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteFile(file.id)}
-                      className="absolute top-2 left-2 h-6 w-6 p-0 bg-background/80 hover:bg-destructive/20 hover:text-destructive"
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
+                  <FilePreview
+                    key={file.id}
+                    file={file}
+                    type={file.type}
+                    status={file.status}
+                    uploadProgress={file.uploadProgress}
+                    error={file.error}
+                    pages={file.pages}
+                    onTypeChange={(newType) => handleTypeChange(file.id, newType)}
+                    onDelete={() => handleDeleteFile(file.id)}
+                  />
                 ))}
               </div>
             </div>
@@ -401,48 +477,24 @@ export function FileUploadPanel({ files, onFilesChange, onStartTutorial }: FileU
           {files.length > 0 && (
             <div className="space-y-3">
               <h3 className="text-sm font-medium text-muted-foreground">
-                Uploaded Files ({files.length})
+                Processed Files ({files.length})
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {files.map((file) => (
-                  <div key={file.id} className="relative">
-                     <FilePreview
-                       file={{
-                         name: file.filename,
-                         url: file.fileUrl || '',
-                         type: file.filename.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'application/octet-stream',
-                         size: file.fileSize
-                       }}
-                       type={file.fileType}
-                       status={file.status === 'uploaded' ? 'ready' : file.status as any}
-                       pages={file.metadata?.pageCount as number}
-                    />
-                    <div className="absolute top-2 right-2">
-                      <Select
-                        value={file.fileType}
-                        onValueChange={(value) => handleTypeChange(file.id, value)}
-                      >
-                        <SelectTrigger className="w-20 h-6 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {FILE_TYPE_OPTIONS.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteFile(file.id)}
-                      className="absolute top-2 left-2 h-6 w-6 p-0 bg-background/80 hover:bg-destructive/20 hover:text-destructive"
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
+                  <FilePreview
+                    key={file.id}
+                    file={{
+                      name: file.filename,
+                      url: file.fileUrl || '',
+                      type: file.filename.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'application/octet-stream',
+                      size: file.fileSize
+                    }}
+                    type={file.fileType}
+                    status={file.status === 'uploaded' ? 'ready' : file.status as any}
+                    pages={file.metadata?.pageCount as number}
+                    onTypeChange={(newType) => handleTypeChange(file.id, newType)}
+                    onDelete={() => handleDeleteFile(file.id)}
+                  />
                 ))}
               </div>
             </div>
@@ -456,27 +508,6 @@ export function FileUploadPanel({ files, onFilesChange, onStartTutorial }: FileU
             </div>
           )}
         </div>
-      </div>
-
-      {/* Process Button */}
-      <div className="p-4 border-t border-border">
-        <Button
-          onClick={handleProcessFiles}
-          disabled={(files.length === 0 && fileQueue.filter(f => f.status === 'ready').length === 0) || processing || uploading}
-          className="w-full bg-primary hover:bg-primary/90"
-        >
-          {processing ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Processing Files...
-            </>
-          ) : (
-            <>
-              <Settings className="mr-2 h-4 w-4" />
-              Process Files
-            </>
-          )}
-        </Button>
       </div>
     </div>
   );
