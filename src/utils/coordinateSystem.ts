@@ -187,6 +187,13 @@ export class DrawingCoordinateSystem implements CoordinateSystem {
   getFontSize(baseFontSize: number = 12): number {
     return Math.max(8, baseFontSize / this.viewport.zoom);
   }
+
+  /**
+   * Get text size scaled for zoom
+   */
+  getTextSize(baseSize: number): number {
+    return Math.max(baseSize * this.viewport.zoom, 8);
+  }
 }
 
 // Global coordinate system instance

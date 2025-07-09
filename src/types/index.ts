@@ -131,6 +131,15 @@ export interface BackingStandard {
   updatedBy: string;
 }
 
+// Measurement types
+export interface Measurement {
+  id: string;
+  startPoint: Point;
+  endPoint: Point;
+  distance: number;
+  createdAt: string;
+}
+
 export interface AppSettings {
   defaultStandards: 'custom' | 'commercial' | 'residential';
   units: 'imperial' | 'metric';
