@@ -227,13 +227,13 @@ export function ProcessingWizard({ onComplete, onCancel }: ProcessingWizardProps
                 onComponentsChange={setDetectedComponents}
                 
                 // Step 4 props
-                backingRules={backingRules}
-                onRulesChange={setBackingRules}
-                backingPlacements={backingPlacements}
-                onPlacementsChange={setBackingPlacements}
+                detectedComponents={detectedComponents}
+                onPlacementsGenerated={setBackingPlacements}
                 
                 // Step 5 props
-                onComplete={handleComplete}
+                onViewInEditor={handleComplete}
+                onRegenerate={() => setBackingPlacements([])}
+                onExportReport={() => {}}
               />
             )}
           </CardContent>
