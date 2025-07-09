@@ -4,24 +4,11 @@ import { Worker, Viewer, DocumentLoadEvent, PageChangeEvent } from '@react-pdf-v
 import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
 import '@react-pdf-viewer/core/lib/styles/index.css';
 import '@react-pdf-viewer/default-layout/lib/styles/index.css';
-import { 
-  ZoomIn, 
-  ZoomOut, 
-  Hand, 
-  MousePointer, 
-  Square, 
-  Ruler, 
-  Grid, 
-  Eye, 
-  EyeOff,
-  RotateCcw 
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
+import { Square } from 'lucide-react';
 import { useViewerStore } from '@/stores/viewerStore';
 import { BackingPlacement } from './BackingPlacement';
 import { BackingEditor } from './BackingEditor';
+import { ViewerToolbar } from './ViewerToolbar';
 import { BackingPlacement as BackingType } from '@/types';
 import { constrainPosition, getZoomToFit, Point } from '@/utils/viewerUtils';
 
@@ -42,22 +29,14 @@ export function DrawingViewer({ drawingUrl, backings, onBackingsChange }: Drawin
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(!!drawingUrl);
+  const [drawingOpacity, setDrawingOpacity] = useState(100);
   
   const {
-    zoom,
-    position,
     selectedTool,
     selectedBacking,
     showGrid,
-    gridSize,
     layers,
-    setZoom,
-    setPosition,
-    selectTool,
     selectBacking,
-    toggleLayer,
-    toggleGrid,
-    resetView,
   } = useViewerStore();
 
   // Default layout plugin
@@ -120,6 +99,18 @@ export function DrawingViewer({ drawingUrl, backings, onBackingsChange }: Drawin
     }, 100);
   }, []);
 
+  // Handle page navigation from toolbar
+  const handlePageNavigation = useCallback((page: number) => {
+    setCurrentPage(page);
+    // The PDF viewer will handle the actual page change
+  }, []);
+
+  // Handle zoom to fit
+  const handleZoomToFit = useCallback(() => {
+    // This would be handled by the PDF viewer's built-in zoom controls
+    // We can trigger it through the default layout plugin if needed
+  }, []);
+
   // Handle mouse down for adding backings
   const handleMouseDown = (e: any) => {
     if (selectedTool === 'add') {
@@ -128,8 +119,8 @@ export function DrawingViewer({ drawingUrl, backings, onBackingsChange }: Drawin
       
       // Convert screen coordinates to PDF coordinates
       const worldPos = {
-        x: (pointer.x - position.x) / zoom,
-        y: (pointer.y - position.y) / zoom,
+        x: pointer.x,
+        y: pointer.y,
       };
 
       const newBacking: BackingType = {
@@ -159,16 +150,14 @@ export function DrawingViewer({ drawingUrl, backings, onBackingsChange }: Drawin
 
   // Grid rendering for overlay
   const renderGrid = () => {
-    if (!showGrid || !layers.drawing) return null;
+    if (!showGrid) return null;
 
     const lines = [];
-    const gridSpacing = gridSize * zoom;
-    const offsetX = position.x % gridSpacing;
-    const offsetY = position.y % gridSpacing;
-
+    const gridSpacing = 50; // Fixed grid spacing for overlay
+    
     // Vertical lines
     for (let i = 0; i < Math.ceil(stageSize.width / gridSpacing) + 1; i++) {
-      const x = i * gridSpacing + offsetX;
+      const x = i * gridSpacing;
       lines.push(
         <Line
           key={`v-${i}`}
@@ -181,7 +170,7 @@ export function DrawingViewer({ drawingUrl, backings, onBackingsChange }: Drawin
 
     // Horizontal lines
     for (let i = 0; i < Math.ceil(stageSize.height / gridSpacing) + 1; i++) {
-      const y = i * gridSpacing + offsetY;
+      const y = i * gridSpacing;
       lines.push(
         <Line
           key={`h-${i}`}
@@ -195,74 +184,19 @@ export function DrawingViewer({ drawingUrl, backings, onBackingsChange }: Drawin
     return lines;
   };
 
-  const getToolIcon = (tool: string) => {
-    switch (tool) {
-      case 'pan': return <Hand className="h-4 w-4" />;
-      case 'select': return <MousePointer className="h-4 w-4" />;
-      case 'add': return <Square className="h-4 w-4" />;
-      case 'measure': return <Ruler className="h-4 w-4" />;
-      default: return <MousePointer className="h-4 w-4" />;
-    }
-  };
-
   const selectedBackingData = backings.find(b => b.id === selectedBacking);
 
   return (
     <div className="h-full flex flex-col bg-slate-900">
       {/* Toolbar */}
-      <div className="flex items-center justify-between p-4 bg-card border-b border-border">
-        <div className="flex items-center space-x-2">
-          {/* PDF Info */}
-          {totalPages > 0 && (
-            <>
-              <div className="px-2 py-1 text-sm bg-muted rounded">
-                Page {currentPage + 1} of {totalPages}
-              </div>
-              <Separator orientation="vertical" className="h-6" />
-            </>
-          )}
-
-          {/* Tools */}
-          {(['pan', 'select', 'add', 'measure'] as const).map((tool) => (
-            <Button
-              key={tool}
-              variant={selectedTool === tool ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => selectTool(tool)}
-              className="h-8 w-8 p-0"
-            >
-              {getToolIcon(tool)}
-            </Button>
-          ))}
-
-          <Separator orientation="vertical" className="h-6" />
-
-          {/* Grid Toggle */}
-          <Button
-            variant={showGrid ? 'default' : 'outline'}
-            size="sm"
-            onClick={toggleGrid}
-            className="h-8 w-8 p-0"
-          >
-            <Grid className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {/* Layer Controls */}
-        <div className="flex items-center space-x-2">
-          {Object.entries(layers).map(([layer, visible]) => (
-            <Badge
-              key={layer}
-              variant={visible ? 'default' : 'outline'}
-              className="cursor-pointer text-xs"
-              onClick={() => toggleLayer(layer as keyof typeof layers)}
-            >
-              {visible ? <Eye className="h-3 w-3 mr-1" /> : <EyeOff className="h-3 w-3 mr-1" />}
-              {layer.charAt(0).toUpperCase() + layer.slice(1)}
-            </Badge>
-          ))}
-        </div>
-      </div>
+      <ViewerToolbar
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageNavigation}
+        onZoomToFit={handleZoomToFit}
+        drawingOpacity={drawingOpacity}
+        onDrawingOpacityChange={setDrawingOpacity}
+      />
 
       {/* Main Content */}
       <div className="flex-1 flex">
@@ -277,7 +211,13 @@ export function DrawingViewer({ drawingUrl, backings, onBackingsChange }: Drawin
             {/* PDF Viewer Layer */}
             {drawingUrl && (
               <Worker workerUrl={workerUrl}>
-                <div style={{ height: '100%', position: 'relative' }}>
+                <div 
+                  style={{ 
+                    height: '100%', 
+                    position: 'relative',
+                    opacity: layers.drawing ? drawingOpacity / 100 : 0
+                  }}
+                >
                   <Viewer
                     fileUrl={drawingUrl}
                     plugins={[defaultLayoutPluginInstance]}
@@ -292,7 +232,8 @@ export function DrawingViewer({ drawingUrl, backings, onBackingsChange }: Drawin
                       position: 'absolute', 
                       top: 0, 
                       left: 0,
-                      pointerEvents: selectedTool === 'pan' ? 'none' : 'auto'
+                      pointerEvents: selectedTool === 'pan' ? 'none' : 'auto',
+                      zIndex: 10
                     }}
                     width={stageSize.width}
                     height={stageSize.height}
