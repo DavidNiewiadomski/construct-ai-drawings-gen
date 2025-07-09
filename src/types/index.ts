@@ -104,3 +104,55 @@ export interface SearchResult {
   boundingBox: Rectangle;
   context: string;
 }
+
+export interface BackingStandard {
+  id: string;
+  componentType: string;
+  conditions: {
+    weightMin?: number;
+    weightMax?: number;
+    widthMin?: number;
+    widthMax?: number;
+    custom?: string;
+  };
+  backing: {
+    material: string;
+    thickness: string;
+    width: number;
+    height: number;
+    fasteners: string;
+    spacing: number;
+  };
+  heightAFF: number;
+  notes: string;
+  images: string[];
+  category: string;
+  updatedAt: string;
+  updatedBy: string;
+}
+
+export interface AppSettings {
+  defaultStandards: 'custom' | 'commercial' | 'residential';
+  units: 'imperial' | 'metric';
+  gridSize: number;
+  snapTolerance: number;
+  autoSave: boolean;
+  theme: 'dark' | 'light';
+}
+
+export interface AISettings {
+  confidenceThresholds: Record<string, number>;
+  enabledComponentTypes: string[];
+  autoProcess: boolean;
+  batchSize: number;
+  qualityVsSpeed: number;
+  ocrLanguage: string;
+  enhancementFilters: boolean;
+}
+
+export interface TitleBlockConfig {
+  template: string;
+  fields: Record<string, string>;
+  logoUrl?: string;
+  position: 'bottom' | 'right';
+}

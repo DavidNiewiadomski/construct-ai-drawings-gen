@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Process from "./pages/Process";
+import Settings from "./pages/Settings";
 
 const App = () => (
   <TooltipProvider>
@@ -13,6 +14,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/process" element={<Process />} />
+          <Route path="/settings" element={<Settings />} />
         </Routes>
     </BrowserRouter>
   </TooltipProvider>
