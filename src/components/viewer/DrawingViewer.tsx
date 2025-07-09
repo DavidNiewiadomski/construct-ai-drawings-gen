@@ -7,7 +7,7 @@ import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 import { Square } from 'lucide-react';
 import { useViewerStore } from '@/stores/viewerStore';
 import { BackingOverlay } from './BackingOverlay';
-import { BackingEditor } from './BackingEditor';
+import { BackingPropertiesPanel } from './BackingPropertiesPanel';
 import { ViewerToolbar } from './ViewerToolbar';
 import { BackingPlacement as BackingType } from '@/types';
 import { constrainPosition, getZoomToFit, Point } from '@/utils/viewerUtils';
@@ -295,10 +295,10 @@ export function DrawingViewer({ drawingUrl, backings, onBackingsChange }: Drawin
           </div>
         </div>
 
-        {/* Backing Editor Panel */}
+        {/* Backing Properties Panel */}
         {selectedBackingData && (
           <div className="w-80 border-l border-border">
-            <BackingEditor
+            <BackingPropertiesPanel
               backing={selectedBackingData}
               onUpdate={(updatedBacking) => {
                 const updatedBackings = backings.map(b =>
