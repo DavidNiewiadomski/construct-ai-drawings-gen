@@ -71,30 +71,43 @@ const processingStages = [
 // Mock detected components for demo
 const generateMockComponents = (fileCount: number): AIDetectedComponent[] => {
   const componentTypes = [
-    'Outlet', 'Switch', 'Light Fixture', 'Panel', 'Junction Box',
-    'Receptacle', 'Disconnect', 'Motor', 'Transformer', 'Conduit Run'
+    'outlet', 'switch', 'light_fixture', 'panel', 'junction_box',
+    'receptacle', 'disconnect', 'motor', 'transformer', 'conduit_run'
   ];
+  
+  const locations = ['Office A', 'Conference Room', 'Lobby', 'Kitchen', 'Storage', 'Corridor', 'Break Room'];
   
   const components: AIDetectedComponent[] = [];
   
   for (let i = 0; i < fileCount * 8; i++) {
+    const position = {
+      x: Math.random() * 1000,
+      y: Math.random() * 800
+    };
+    
     components.push({
       id: `comp-${i + 1}`,
       type: componentTypes[Math.floor(Math.random() * componentTypes.length)],
       confidence: 0.75 + Math.random() * 0.25,
-      position: {
-        x: Math.random() * 1000,
-        y: Math.random() * 800
-      },
+      position,
       bounds: {
-        x: Math.random() * 1000,
-        y: Math.random() * 800,
+        x: position.x - 10,
+        y: position.y - 10,
         width: 20 + Math.random() * 40,
         height: 20 + Math.random() * 40
       },
       drawingId: `file-${Math.floor(i / 8) + 1}`,
       confirmed: false,
       needsBacking: Math.random() > 0.3,
+      text: `${componentTypes[Math.floor(Math.random() * componentTypes.length)].replace('_', ' ').toUpperCase()} ${i + 1}`,
+      location: locations[Math.floor(Math.random() * locations.length)],
+      pageNumber: Math.floor(Math.random() * 3) + 1,
+      boundingBox: {
+        x: position.x - 10,
+        y: position.y - 10,
+        width: 20 + Math.random() * 40,
+        height: 20 + Math.random() * 40
+      },
       properties: {
         voltage: ['120V', '240V', '480V'][Math.floor(Math.random() * 3)],
         amperage: [15, 20, 30, 50][Math.floor(Math.random() * 4)],

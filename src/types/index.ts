@@ -281,10 +281,14 @@ export interface AIDetectedComponent {
     width: number;
     height: number;
   };
-  drawingId: string;
+  drawingId?: string;
   confirmed: boolean;
   needsBacking: boolean;
   properties?: Record<string, any>;
+  text: string;
+  location: string;
+  pageNumber: number;
+  boundingBox: { x: number; y: number; width: number; height: number };
 }
 
 export interface AIBackingRule {
