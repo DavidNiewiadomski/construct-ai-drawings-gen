@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Brain, Zap, Search, CheckCircle, AlertCircle } from 'lucide-react';
+import { Brain, FileText, Search, Zap, CheckCircle, AlertCircle, X, Loader } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { DetectedComponent } from '@/types';
 import { FileCard } from '@/stores/uploadStore';
 
@@ -10,50 +11,61 @@ interface ProcessingStepProps {
   selectedFiles: FileCard[];
   isProcessing: boolean;
   onProcessingComplete: (components: DetectedComponent[]) => void;
+  onCancel?: () => void;
 }
 
-interface ProcessingStage {
-  id: string;
-  title: string;
-  description: string;
-  icon: typeof Brain;
-  duration: number; // in seconds
-  status: 'pending' | 'active' | 'completed' | 'error';
-}
-
-const PROCESSING_STAGES: ProcessingStage[] = [
-  {
-    id: 'analysis',
-    title: 'Document Analysis',
-    description: 'Analyzing drawings and extracting visual elements',
+const processingStages = [
+  { 
+    name: 'Preparing Files', 
+    duration: 2000,
+    icon: FileText,
+    messages: [
+      'Loading drawing files...',
+      'Validating file formats...',
+      'Optimizing for processing...'
+    ]
+  },
+  { 
+    name: 'Extracting Text (OCR)', 
+    duration: 3000,
     icon: Search,
-    duration: 3,
-    status: 'pending',
+    messages: [
+      'Scanning drawings for text...',
+      'Processing annotations...',
+      'Extracting component labels...'
+    ]
   },
-  {
-    id: 'detection',
-    title: 'Component Detection',
-    description: 'Identifying electrical components and fixtures',
+  { 
+    name: 'Detecting Components', 
+    duration: 4000,
     icon: Brain,
-    duration: 4,
-    status: 'pending',
+    messages: [
+      'Found 12 potential components...',
+      'Analyzing electrical fixtures...',
+      'Identifying mounting points...',
+      'Classifying component types...'
+    ]
   },
-  {
-    id: 'classification',
-    title: 'Classification & Verification',
-    description: 'Classifying components and verifying accuracy',
-    icon: CheckCircle,
-    duration: 2,
-    status: 'pending',
-  },
-  {
-    id: 'optimization',
-    title: 'Results Optimization',
-    description: 'Optimizing detection results and confidence scores',
+  { 
+    name: 'Analyzing Specifications', 
+    duration: 3000,
     icon: Zap,
-    duration: 1,
-    status: 'pending',
+    messages: [
+      'Analyzing mounting requirements...',
+      'Cross-referencing specifications...',
+      'Calculating load requirements...'
+    ]
   },
+  { 
+    name: 'Generating Placements', 
+    duration: 2000,
+    icon: CheckCircle,
+    messages: [
+      'Generating backing placements...',
+      'Optimizing material usage...',
+      'Finalizing results...'
+    ]
+  }
 ];
 
 // Mock detected components for demo
@@ -97,13 +109,17 @@ const generateMockComponents = (fileCount: number): DetectedComponent[] => {
 export function ProcessingStep({ 
   selectedFiles, 
   isProcessing, 
-  onProcessingComplete 
+  onProcessingComplete,
+  onCancel 
 }: ProcessingStepProps) {
-  const [stages, setStages] = useState<ProcessingStage[]>(PROCESSING_STAGES);
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
   const [stageProgress, setStageProgress] = useState(0);
   const [overallProgress, setOverallProgress] = useState(0);
+  const [currentMessage, setCurrentMessage] = useState('');
+  const [completedStages, setCompletedStages] = useState<number[]>([]);
   const [hasStarted, setHasStarted] = useState(false);
+
+  const totalDuration = processingStages.reduce((sum, stage) => sum + stage.duration, 0);
 
   useEffect(() => {
     if (selectedFiles.length > 0 && !hasStarted) {
@@ -113,26 +129,26 @@ export function ProcessingStep({
   }, [selectedFiles, hasStarted]);
 
   const startProcessing = async () => {
-    const totalDuration = stages.reduce((sum, stage) => sum + stage.duration, 0);
     let elapsedTime = 0;
 
-    for (let i = 0; i < stages.length; i++) {
-      // Mark current stage as active
-      setStages(prev => prev.map((stage, index) => ({
-        ...stage,
-        status: index === i ? 'active' : index < i ? 'completed' : 'pending'
-      })));
-      
+    for (let i = 0; i < processingStages.length; i++) {
+      const stage = processingStages[i];
       setCurrentStageIndex(i);
+      setStageProgress(0);
       
-      const stageDuration = stages[i].duration;
       const startTime = Date.now();
+      
+      // Cycle through messages for this stage
+      const messageInterval = setInterval(() => {
+        const randomMessage = stage.messages[Math.floor(Math.random() * stage.messages.length)];
+        setCurrentMessage(randomMessage);
+      }, 800);
       
       // Animate progress for current stage
       const progressInterval = setInterval(() => {
         const currentTime = Date.now();
-        const stageElapsed = (currentTime - startTime) / 1000;
-        const stageProgressValue = Math.min((stageElapsed / stageDuration) * 100, 100);
+        const stageElapsed = (currentTime - startTime);
+        const stageProgressValue = Math.min((stageElapsed / stage.duration) * 100, 100);
         
         setStageProgress(stageProgressValue);
         
@@ -142,127 +158,159 @@ export function ProcessingStep({
         
         if (stageProgressValue >= 100) {
           clearInterval(progressInterval);
+          clearInterval(messageInterval);
         }
-      }, 100);
+      }, 50);
       
       // Wait for stage duration
-      await new Promise(resolve => setTimeout(resolve, stageDuration * 1000));
-      
-      clearInterval(progressInterval);
-      elapsedTime += stageDuration;
+      await new Promise(resolve => setTimeout(resolve, stage.duration));
       
       // Mark stage as completed
-      setStages(prev => prev.map((stage, index) => ({
-        ...stage,
-        status: index <= i ? 'completed' : 'pending'
-      })));
-      
-      setStageProgress(100);
+      setCompletedStages(prev => [...prev, i]);
+      elapsedTime += stage.duration;
     }
     
     // Generate mock components and complete processing
     const mockComponents = generateMockComponents(selectedFiles.length);
+    setCurrentMessage(`Processing complete! Generated ${mockComponents.length} components.`);
     onProcessingComplete(mockComponents);
   };
 
-  const getStageStatusIcon = (stage: ProcessingStage) => {
+  const getStageIcon = (stageIndex: number) => {
+    const stage = processingStages[stageIndex];
     const Icon = stage.icon;
     
-    switch (stage.status) {
-      case 'completed':
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
-      case 'active':
-        return <Icon className="h-5 w-5 text-primary animate-pulse" />;
-      case 'error':
-        return <AlertCircle className="h-5 w-5 text-destructive" />;
-      default:
-        return <Icon className="h-5 w-5 text-muted-foreground" />;
+    if (completedStages.includes(stageIndex)) {
+      return <CheckCircle className="h-5 w-5 text-green-500" />;
+    } else if (currentStageIndex === stageIndex) {
+      return <Icon className="h-5 w-5 text-primary animate-pulse" />;
+    } else {
+      return <Icon className="h-5 w-5 text-muted-foreground" />;
     }
   };
 
   return (
-    <div className="space-y-8">
-      {/* Overall Progress */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      {/* Header with Cancel Button */}
+      <div className="flex items-center justify-between">
+        <div>
           <h3 className="text-lg font-semibold text-foreground">
-            Processing {selectedFiles.length} File{selectedFiles.length !== 1 ? 's' : ''}
+            AI Processing in Progress
           </h3>
-          <Badge variant="outline">
-            {Math.round(overallProgress)}% Complete
-          </Badge>
+          <p className="text-sm text-muted-foreground">
+            Processing {selectedFiles.length} file{selectedFiles.length !== 1 ? 's' : ''} with advanced AI algorithms
+          </p>
         </div>
         
-        <Progress value={overallProgress} className="h-3" />
-        
-        <div className="text-sm text-muted-foreground">
-          Estimated time remaining: {Math.max(0, Math.ceil((100 - overallProgress) * 0.1))} seconds
-        </div>
+        {onCancel && (
+          <Button variant="outline" onClick={onCancel} className="text-destructive hover:bg-destructive/10">
+            <X className="h-4 w-4 mr-2" />
+            Cancel
+          </Button>
+        )}
       </div>
 
-      {/* Processing Stages */}
-      <div className="space-y-4">
-        {stages.map((stage, index) => (
-          <Card
-            key={stage.id}
-            className={`
-              transition-all duration-300
-              ${stage.status === 'active' 
-                ? 'border-primary shadow-lg bg-primary/5' 
-                : stage.status === 'completed'
-                ? 'border-green-500 bg-green-50/50'
-                : 'border-muted'
-              }
-            `}
-          >
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-4">
-                <div className="flex-shrink-0">
-                  {getStageStatusIcon(stage)}
+      {/* Overall Progress */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-foreground">Overall Progress</span>
+              <Badge variant="outline">
+                {Math.round(overallProgress)}% Complete
+              </Badge>
+            </div>
+            
+            <Progress value={overallProgress} className="h-3" />
+            
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span>Stage {currentStageIndex + 1} of {processingStages.length}</span>
+              <span>Est. {Math.max(0, Math.ceil((100 - overallProgress) * 0.15))}s remaining</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Current Stage */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardContent className="p-6">
+          <div className="space-y-4">
+            <div className="flex items-center space-x-3">
+              <Loader className="h-6 w-6 text-primary animate-spin" />
+              <div>
+                <h4 className="font-semibold text-foreground">
+                  {processingStages[currentStageIndex]?.name}
+                </h4>
+                <p className="text-sm text-muted-foreground">
+                  {currentMessage}
+                </p>
+              </div>
+            </div>
+            
+            <Progress value={stageProgress} className="h-2" />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Stage Checklist */}
+      <Card>
+        <CardContent className="p-6">
+          <h4 className="font-medium text-foreground mb-4">Processing Stages</h4>
+          <div className="space-y-3">
+            {processingStages.map((stage, index) => (
+              <div
+                key={index}
+                className={`
+                  flex items-center space-x-3 p-3 rounded-lg transition-all
+                  ${currentStageIndex === index 
+                    ? 'bg-primary/10 border border-primary/20' 
+                    : completedStages.includes(index)
+                    ? 'bg-green-50 border border-green-200'
+                    : 'bg-muted/30'
+                  }
+                `}
+              >
+                {getStageIcon(index)}
+                <div className="flex-1">
+                  <span className={`
+                    text-sm font-medium
+                    ${completedStages.includes(index) 
+                      ? 'text-green-700' 
+                      : currentStageIndex === index 
+                      ? 'text-primary' 
+                      : 'text-muted-foreground'
+                    }
+                  `}>
+                    {stage.name}
+                  </span>
                 </div>
                 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-foreground truncate">
-                      {stage.title}
-                    </h4>
-                    <Badge 
-                      variant={
-                        stage.status === 'completed' ? 'default' :
-                        stage.status === 'active' ? 'secondary' :
-                        'outline'
-                      }
-                      className="ml-2"
-                    >
-                      {stage.status === 'completed' ? 'Done' :
-                       stage.status === 'active' ? 'Processing' :
-                       'Pending'}
-                    </Badge>
-                  </div>
-                  
-                  <p className="text-sm text-muted-foreground mb-3">
-                    {stage.description}
-                  </p>
-                  
-                  {stage.status === 'active' && (
-                    <Progress value={stageProgress} className="h-2" />
-                  )}
-                </div>
+                {currentStageIndex === index && (
+                  <Badge variant="secondary" className="text-xs">
+                    In Progress
+                  </Badge>
+                )}
+                
+                {completedStages.includes(index) && (
+                  <Badge variant="default" className="text-xs bg-green-600">
+                    Complete
+                  </Badge>
+                )}
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* File Processing Status */}
       <Card>
-        <CardContent className="p-4">
-          <h4 className="font-medium text-foreground mb-3">Files Being Processed</h4>
+        <CardContent className="p-6">
+          <h4 className="font-medium text-foreground mb-4">Files</h4>
           <div className="space-y-2">
             {selectedFiles.map((file, index) => (
               <div
                 key={file.id}
-                className="flex items-center justify-between p-2 bg-muted/30 rounded"
+                className="flex items-center justify-between p-3 bg-muted/30 rounded"
               >
                 <span className="text-sm text-foreground truncate flex-1">
                   {file.name}
@@ -271,8 +319,10 @@ export function ProcessingStep({
                   <Badge variant="outline" className="text-xs">
                     {file.type.replace('_', ' ')}
                   </Badge>
-                  {overallProgress > (index / selectedFiles.length) * 100 && (
+                  {overallProgress > (index / selectedFiles.length) * 100 ? (
                     <CheckCircle className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <Loader className="h-4 w-4 text-muted-foreground animate-spin" />
                   )}
                 </div>
               </div>
