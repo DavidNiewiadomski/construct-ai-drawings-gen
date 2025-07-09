@@ -227,10 +227,10 @@ export function ProcessingWizard({ onComplete, onCancel }: ProcessingWizardProps
                 onComponentsChange={setDetectedComponents}
                 
                 // Step 4 props
-                detectedComponents={detectedComponents}
                 onPlacementsGenerated={setBackingPlacements}
                 
                 // Step 5 props
+                generatedPlacements={backingPlacements}
                 onViewInEditor={handleComplete}
                 onRegenerate={() => setBackingPlacements([])}
                 onExportReport={() => {}}
