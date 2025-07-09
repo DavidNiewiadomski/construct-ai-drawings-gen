@@ -70,27 +70,22 @@ export function ViewerToolbar({
   } = useViewerStore();
 
   const handleZoomChange = (newZoom: number) => {
-    setZoom(newZoom / 100);
+    const zoomValue = newZoom / 100;
+    setZoom(zoomValue);
   };
 
   const handleZoomIn = () => {
     const currentZoomPercent = Math.round(zoom * 100);
     const nextPreset = ZOOM_PRESETS.find(preset => preset > currentZoomPercent);
-    if (nextPreset) {
-      setZoom(nextPreset / 100);
-    } else {
-      setZoom(zoom * 1.2);
-    }
+    const newZoom = nextPreset ? nextPreset / 100 : Math.min(5, zoom * 1.2);
+    setZoom(newZoom);
   };
 
   const handleZoomOut = () => {
     const currentZoomPercent = Math.round(zoom * 100);
     const prevPreset = [...ZOOM_PRESETS].reverse().find(preset => preset < currentZoomPercent);
-    if (prevPreset) {
-      setZoom(prevPreset / 100);
-    } else {
-      setZoom(zoom / 1.2);
-    }
+    const newZoom = prevPreset ? prevPreset / 100 : Math.max(0.1, zoom / 1.2);
+    setZoom(newZoom);
   };
 
   const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

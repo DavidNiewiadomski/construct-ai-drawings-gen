@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Group, Rect, Text, Circle } from 'react-konva';
 import { BackingPlacement as BackingType } from '@/types';
+import { DrawingCoordinateSystem } from '@/utils/coordinateSystem';
 
 interface BackingOverlayProps {
   backings: BackingType[];
@@ -9,6 +10,7 @@ interface BackingOverlayProps {
   onBackingUpdate: (backing: BackingType) => void;
   gridSize?: number;
   zoom?: number;
+  coordinateSystem: DrawingCoordinateSystem;
 }
 
 const BACKING_COLORS = {
@@ -29,14 +31,15 @@ export function BackingOverlay({
   onBackingSelect,
   onBackingUpdate,
   gridSize = 24,
-  zoom = 1
+  zoom = 1,
+  coordinateSystem
 }: BackingOverlayProps) {
   const [hoveredBackingId, setHoveredBackingId] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragData, setDragData] = useState<{ id: string; startX: number; startY: number } | null>(null);
 
-  const snapToGrid = (value: number, grid: number = gridSize): number => {
-    return Math.round(value / grid) * grid;
+  const snapToGrid = (pdfPoint: { x: number; y: number }, grid: number = gridSize): { x: number; y: number } => {
+    return coordinateSystem.snapToPdfGrid(pdfPoint, grid);
   };
 
   const formatBackingLabel = (backing: BackingType): string => {
@@ -68,15 +71,16 @@ export function BackingOverlay({
     const backing = backings.find(b => b.id === backingId);
     if (!backing) return;
 
-    const snappedX = snapToGrid(x);
-    const snappedY = snapToGrid(y);
+    // Convert screen coordinates to PDF coordinates
+    const pdfPos = coordinateSystem.screenToPdf({ x, y });
+    const snappedPos = snapToGrid(pdfPos);
 
     const updatedBacking: BackingType = {
       ...backing,
       location: {
         ...backing.location,
-        x: snappedX,
-        y: snappedY,
+        x: snappedPos.x,
+        y: snappedPos.y,
       },
     };
 
@@ -101,43 +105,61 @@ export function BackingOverlay({
     let newDimensions = { ...dimensions };
     let newLocation = { ...location };
 
-    const snappedX = snapToGrid(x);
-    const snappedY = snapToGrid(y);
+    // Convert screen coordinates to PDF coordinates
+    const pdfPos = coordinateSystem.screenToPdf({ x, y });
+    const snappedPos = snapToGrid(pdfPos);
+
+    // Convert backing dimensions from inches to PDF units for calculations
+    const pdfWidth = coordinateSystem.inchesToPdfUnits(dimensions.width);
+    const pdfHeight = coordinateSystem.inchesToPdfUnits(dimensions.height);
+    const minSizePdf = coordinateSystem.inchesToPdfUnits(gridSize);
 
     switch (handleType) {
       case 'top-left':
-        newDimensions.width = Math.max(gridSize, dimensions.width + (location.x - snappedX));
-        newDimensions.height = Math.max(gridSize, dimensions.height + (location.y - snappedY));
-        newLocation.x = snappedX;
-        newLocation.y = snappedY;
+        const newWidthTL = Math.max(minSizePdf, pdfWidth + (location.x - snappedPos.x));
+        const newHeightTL = Math.max(minSizePdf, pdfHeight + (location.y - snappedPos.y));
+        newDimensions.width = coordinateSystem.pdfUnitsToInches(newWidthTL);
+        newDimensions.height = coordinateSystem.pdfUnitsToInches(newHeightTL);
+        newLocation.x = snappedPos.x;
+        newLocation.y = snappedPos.y;
         break;
       case 'top-right':
-        newDimensions.width = Math.max(gridSize, snappedX - location.x);
-        newDimensions.height = Math.max(gridSize, dimensions.height + (location.y - snappedY));
-        newLocation.y = snappedY;
+        const newWidthTR = Math.max(minSizePdf, snappedPos.x - location.x);
+        const newHeightTR = Math.max(minSizePdf, pdfHeight + (location.y - snappedPos.y));
+        newDimensions.width = coordinateSystem.pdfUnitsToInches(newWidthTR);
+        newDimensions.height = coordinateSystem.pdfUnitsToInches(newHeightTR);
+        newLocation.y = snappedPos.y;
         break;
       case 'bottom-left':
-        newDimensions.width = Math.max(gridSize, dimensions.width + (location.x - snappedX));
-        newDimensions.height = Math.max(gridSize, snappedY - location.y);
-        newLocation.x = snappedX;
+        const newWidthBL = Math.max(minSizePdf, pdfWidth + (location.x - snappedPos.x));
+        const newHeightBL = Math.max(minSizePdf, snappedPos.y - location.y);
+        newDimensions.width = coordinateSystem.pdfUnitsToInches(newWidthBL);
+        newDimensions.height = coordinateSystem.pdfUnitsToInches(newHeightBL);
+        newLocation.x = snappedPos.x;
         break;
       case 'bottom-right':
-        newDimensions.width = Math.max(gridSize, snappedX - location.x);
-        newDimensions.height = Math.max(gridSize, snappedY - location.y);
+        const newWidthBR = Math.max(minSizePdf, snappedPos.x - location.x);
+        const newHeightBR = Math.max(minSizePdf, snappedPos.y - location.y);
+        newDimensions.width = coordinateSystem.pdfUnitsToInches(newWidthBR);
+        newDimensions.height = coordinateSystem.pdfUnitsToInches(newHeightBR);
         break;
       case 'top':
-        newDimensions.height = Math.max(gridSize, dimensions.height + (location.y - snappedY));
-        newLocation.y = snappedY;
+        const newHeightT = Math.max(minSizePdf, pdfHeight + (location.y - snappedPos.y));
+        newDimensions.height = coordinateSystem.pdfUnitsToInches(newHeightT);
+        newLocation.y = snappedPos.y;
         break;
       case 'bottom':
-        newDimensions.height = Math.max(gridSize, snappedY - location.y);
+        const newHeightB = Math.max(minSizePdf, snappedPos.y - location.y);
+        newDimensions.height = coordinateSystem.pdfUnitsToInches(newHeightB);
         break;
       case 'left':
-        newDimensions.width = Math.max(gridSize, dimensions.width + (location.x - snappedX));
-        newLocation.x = snappedX;
+        const newWidthL = Math.max(minSizePdf, pdfWidth + (location.x - snappedPos.x));
+        newDimensions.width = coordinateSystem.pdfUnitsToInches(newWidthL);
+        newLocation.x = snappedPos.x;
         break;
       case 'right':
-        newDimensions.width = Math.max(gridSize, snappedX - location.x);
+        const newWidthR = Math.max(minSizePdf, snappedPos.x - location.x);
+        newDimensions.width = coordinateSystem.pdfUnitsToInches(newWidthR);
         break;
     }
 
@@ -155,41 +177,48 @@ export function BackingOverlay({
     if (selectedBackingId !== backing.id) return null;
 
     const { location, dimensions } = backing;
-    const handleSize = 8 / zoom;
+    const handleSize = coordinateSystem.getLineThickness(8);
     const handleRadius = handleSize / 2;
+
+    // Convert backing dimensions to PDF units for positioning
+    const pdfWidth = coordinateSystem.inchesToPdfUnits(dimensions.width);
+    const pdfHeight = coordinateSystem.inchesToPdfUnits(dimensions.height);
 
     const handles = [
       { type: 'top-left', x: location.x, y: location.y },
-      { type: 'top', x: location.x + dimensions.width / 2, y: location.y },
-      { type: 'top-right', x: location.x + dimensions.width, y: location.y },
-      { type: 'right', x: location.x + dimensions.width, y: location.y + dimensions.height / 2 },
-      { type: 'bottom-right', x: location.x + dimensions.width, y: location.y + dimensions.height },
-      { type: 'bottom', x: location.x + dimensions.width / 2, y: location.y + dimensions.height },
-      { type: 'bottom-left', x: location.x, y: location.y + dimensions.height },
-      { type: 'left', x: location.x, y: location.y + dimensions.height / 2 },
+      { type: 'top', x: location.x + pdfWidth / 2, y: location.y },
+      { type: 'top-right', x: location.x + pdfWidth, y: location.y },
+      { type: 'right', x: location.x + pdfWidth, y: location.y + pdfHeight / 2 },
+      { type: 'bottom-right', x: location.x + pdfWidth, y: location.y + pdfHeight },
+      { type: 'bottom', x: location.x + pdfWidth / 2, y: location.y + pdfHeight },
+      { type: 'bottom-left', x: location.x, y: location.y + pdfHeight },
+      { type: 'left', x: location.x, y: location.y + pdfHeight / 2 },
     ];
 
-    return handles.map((handle) => (
-      <Circle
-        key={`${backing.id}-${handle.type}`}
-        x={handle.x}
-        y={handle.y}
-        radius={handleRadius}
-        fill="white"
-        stroke="#3b82f6"
-        strokeWidth={1 / zoom}
-        draggable
-        onDragMove={(e) =>
-          handleResizeHandleDrag(backing.id, handle.type, e.target.x(), e.target.y())
-        }
-        onMouseEnter={(e) => {
-          e.target.getStage()!.container().style.cursor = 'pointer';
-        }}
-        onMouseLeave={(e) => {
-          e.target.getStage()!.container().style.cursor = 'default';
-        }}
-      />
-    ));
+    return handles.map((handle) => {
+      const screenPos = coordinateSystem.pdfToScreen({ x: handle.x, y: handle.y });
+      return (
+        <Circle
+          key={`${backing.id}-${handle.type}`}
+          x={screenPos.x}
+          y={screenPos.y}
+          radius={handleRadius}
+          fill="white"
+          stroke="#3b82f6"
+          strokeWidth={coordinateSystem.getLineThickness(1)}
+          draggable
+          onDragMove={(e) =>
+            handleResizeHandleDrag(backing.id, handle.type, e.target.x(), e.target.y())
+          }
+          onMouseEnter={(e) => {
+            e.target.getStage()!.container().style.cursor = 'pointer';
+          }}
+          onMouseLeave={(e) => {
+            e.target.getStage()!.container().style.cursor = 'default';
+          }}
+        />
+      );
+    });
   };
 
   return (
@@ -199,17 +228,24 @@ export function BackingOverlay({
         const isHovered = hoveredBackingId === backing.id;
         const { location, dimensions, status } = backing;
 
+        // Convert PDF coordinates to screen coordinates
+        const screenPos = coordinateSystem.pdfToScreen(location);
+        const pdfWidth = coordinateSystem.inchesToPdfUnits(dimensions.width);
+        const pdfHeight = coordinateSystem.inchesToPdfUnits(dimensions.height);
+        const screenWidth = pdfWidth * coordinateSystem.getScaleFactor();
+        const screenHeight = pdfHeight * coordinateSystem.getScaleFactor();
+
         return (
           <Group key={backing.id}>
             {/* Main backing rectangle */}
             <Rect
-              x={location.x}
-              y={location.y}
-              width={dimensions.width}
-              height={dimensions.height}
+              x={screenPos.x}
+              y={screenPos.y}
+              width={screenWidth}
+              height={screenHeight}
               fill={getStatusColor(status)}
               stroke={isSelected || isHovered ? getStatusStrokeColor(status) : 'transparent'}
-              strokeWidth={isSelected ? 3 / zoom : isHovered ? 2 / zoom : 0}
+              strokeWidth={isSelected ? coordinateSystem.getLineThickness(3) : isHovered ? coordinateSystem.getLineThickness(2) : 0}
               draggable
               onMouseEnter={() => {
                 setHoveredBackingId(backing.id);
@@ -230,23 +266,23 @@ export function BackingOverlay({
             {/* Selection outline */}
             {isSelected && (
               <Rect
-                x={location.x - 2 / zoom}
-                y={location.y - 2 / zoom}
-                width={dimensions.width + 4 / zoom}
-                height={dimensions.height + 4 / zoom}
+                x={screenPos.x - coordinateSystem.getLineThickness(2)}
+                y={screenPos.y - coordinateSystem.getLineThickness(2)}
+                width={screenWidth + coordinateSystem.getLineThickness(4)}
+                height={screenHeight + coordinateSystem.getLineThickness(4)}
                 stroke="#3b82f6"
-                strokeWidth={1 / zoom}
-                dash={[5 / zoom, 5 / zoom]}
+                strokeWidth={coordinateSystem.getLineThickness(1)}
+                dash={[coordinateSystem.getLineThickness(5), coordinateSystem.getLineThickness(5)]}
                 listening={false}
               />
             )}
 
             {/* Backing label */}
             <Text
-              x={location.x + 4 / zoom}
-              y={location.y + 4 / zoom}
+              x={screenPos.x + coordinateSystem.getLineThickness(4)}
+              y={screenPos.y + coordinateSystem.getLineThickness(4)}
               text={formatBackingLabel(backing)}
-              fontSize={Math.max(10, 12 / zoom)}
+              fontSize={coordinateSystem.getFontSize(12)}
               fill="white"
               fontFamily="Arial"
               fontStyle="bold"
@@ -258,12 +294,12 @@ export function BackingOverlay({
 
             {/* Status indicator */}
             <Rect
-              x={location.x + dimensions.width - 20 / zoom}
-              y={location.y + 4 / zoom}
-              width={16 / zoom}
-              height={16 / zoom}
+              x={screenPos.x + screenWidth - coordinateSystem.getLineThickness(20)}
+              y={screenPos.y + coordinateSystem.getLineThickness(4)}
+              width={coordinateSystem.getLineThickness(16)}
+              height={coordinateSystem.getLineThickness(16)}
               fill={getStatusStrokeColor(status)}
-              cornerRadius={2 / zoom}
+              cornerRadius={coordinateSystem.getLineThickness(2)}
               listening={false}
             />
 
@@ -272,27 +308,27 @@ export function BackingOverlay({
               <>
                 {/* Width dimension */}
                 <Text
-                  x={location.x + dimensions.width / 2}
-                  y={location.y - 20 / zoom}
+                  x={screenPos.x + screenWidth / 2}
+                  y={screenPos.y - coordinateSystem.getLineThickness(20)}
                   text={`${dimensions.width}"`}
-                  fontSize={Math.max(8, 10 / zoom)}
+                  fontSize={coordinateSystem.getFontSize(10)}
                   fill="#3b82f6"
                   fontFamily="Arial"
                   align="center"
-                  offsetX={20 / zoom}
+                  offsetX={coordinateSystem.getLineThickness(20)}
                   listening={false}
                 />
 
                 {/* Height dimension */}
                 <Text
-                  x={location.x - 25 / zoom}
-                  y={location.y + dimensions.height / 2}
+                  x={screenPos.x - coordinateSystem.getLineThickness(25)}
+                  y={screenPos.y + screenHeight / 2}
                   text={`${dimensions.height}"`}
-                  fontSize={Math.max(8, 10 / zoom)}
+                  fontSize={coordinateSystem.getFontSize(10)}
                   fill="#3b82f6"
                   fontFamily="Arial"
                   align="center"
-                  offsetY={5 / zoom}
+                  offsetY={coordinateSystem.getLineThickness(5)}
                   rotation={-90}
                   listening={false}
                 />
