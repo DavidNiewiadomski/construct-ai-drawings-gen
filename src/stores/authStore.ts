@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { User as AppUser, RegisterData, LoginData } from '@/types';
+import * as authService from '@/services/supabase';
 
 interface AuthStore {
   user: AppUser | null;
@@ -30,10 +31,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   signIn: async (data: LoginData) => {
     set({ loading: true, error: null });
     
-    const { error } = await supabase.auth.signInWithPassword({
-      email: data.email,
-      password: data.password,
-    });
+    const { error } = await authService.signIn(data.email, data.password);
 
     if (error) {
       set({ loading: false, error: error.message });
@@ -47,19 +45,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   signUp: async (data: RegisterData) => {
     set({ loading: true, error: null });
     
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
-      email: data.email,
-      password: data.password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          full_name: data.full_name,
-          company_name: data.company_name,
-          role: data.role,
-        }
-      }
+    const { error } = await authService.signUp(data.email, data.password, {
+      full_name: data.full_name,
+      company_name: data.company_name,
+      role: data.role,
     });
 
     if (error) {
@@ -73,16 +62,14 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   signOut: async () => {
     set({ loading: true });
-    await supabase.auth.signOut();
+    await authService.signOut();
     set({ user: null, session: null, loading: false });
   },
 
   resetPassword: async (email: string) => {
     set({ loading: true, error: null });
     
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
+    const { error } = await authService.resetPassword(email);
 
     if (error) {
       set({ loading: false, error: error.message });
@@ -100,27 +87,23 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   fetchUserProfile: async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
+      const { profile, error } = await authService.getUserProfile(userId);
 
       if (error) {
         console.error('Error fetching user profile:', error);
         return;
       }
 
-      if (data) {
+      if (profile) {
         set({ 
           user: {
-            id: data.user_id,
-            email: data.email,
-            full_name: data.full_name,
-            company_name: data.company_name,
-            role: data.role,
-            created_at: data.created_at,
-            avatar_url: data.avatar_url,
+            id: profile.user_id,
+            email: profile.email,
+            full_name: profile.full_name,
+            company_name: profile.company_name,
+            role: profile.role,
+            created_at: profile.created_at,
+            avatar_url: profile.avatar_url,
           }
         });
       }

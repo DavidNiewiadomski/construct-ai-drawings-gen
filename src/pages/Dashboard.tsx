@@ -1,173 +1,251 @@
+import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthStore } from '@/stores/authStore';
-import { Building2, LogOut, Plus, FolderOpen, Users, Settings } from 'lucide-react';
+import { Plus, FolderOpen, Users, Settings, TrendingUp, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 
 export default function Dashboard() {
-  const { user, signOut } = useAuthStore();
+  const { user } = useAuthStore();
 
-  const handleSignOut = async () => {
-    await signOut();
+  const stats = [
+    {
+      title: 'Active Projects',
+      value: '3',
+      description: 'Currently in progress',
+      icon: FolderOpen,
+      trend: '+2 this month'
+    },
+    {
+      title: 'Completed Drawings',
+      value: '24',
+      description: 'Successfully generated',
+      icon: CheckCircle,
+      trend: '+8 this week'
+    },
+    {
+      title: 'Processing Time',
+      value: '4.2 min',
+      description: 'Average completion',
+      icon: Clock,
+      trend: '-1.2 min improved'
+    },
+    {
+      title: 'Team Members',
+      value: '1',
+      description: 'Active collaborators',
+      icon: Users,
+      trend: 'Invite more'
+    }
+  ];
+
+  const recentProjects = [
+    {
+      id: 1,
+      name: 'Downtown Office Complex',
+      status: 'processing',
+      progress: 75,
+      lastUpdated: '2 hours ago',
+      filesCount: 12
+    },
+    {
+      id: 2,
+      name: 'Residential Tower Phase 2',
+      status: 'review',
+      progress: 100,
+      lastUpdated: '1 day ago',
+      filesCount: 8
+    },
+    {
+      id: 3,
+      name: 'Industrial Warehouse',
+      status: 'completed',
+      progress: 100,
+      lastUpdated: '3 days ago',
+      filesCount: 6
+    }
+  ];
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'processing':
+        return 'text-blue-500 bg-blue-50';
+      case 'review':
+        return 'text-orange-500 bg-orange-50';
+      case 'completed':
+        return 'text-green-500 bg-green-50';
+      default:
+        return 'text-gray-500 bg-gray-50';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'processing':
+        return <Clock className="h-4 w-4" />;
+      case 'review':
+        return <AlertCircle className="h-4 w-4" />;
+      case 'completed':
+        return <CheckCircle className="h-4 w-4" />;
+      default:
+        return <FolderOpen className="h-4 w-4" />;
+    }
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Building2 className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold">AI Backing Drawings</span>
+    <MainLayout>
+      <div className="space-y-8">
+        {/* Welcome Section */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">
+              Welcome back, {user?.full_name?.split(' ')[0] || 'User'}!
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Here's what's happening with your construction projects today.
+            </p>
           </div>
-          
-          <div className="flex items-center space-x-4">
-            <div className="text-sm text-muted-foreground">
-              Welcome, {user?.full_name}
-            </div>
-            <Button variant="outline" onClick={handleSignOut}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Sign Out
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Manage your construction drawing projects with AI-powered backing generation.
-          </p>
+          <Button className="construction-gradient text-white mt-4 sm:mt-0">
+            <Plus className="mr-2 h-4 w-4" />
+            New Project
+          </Button>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">New Project</CardTitle>
-              <Plus className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">Create</div>
-              <p className="text-xs text-muted-foreground">
-                Start a new construction project
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Projects</CardTitle>
-              <FolderOpen className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">0</div>
-              <p className="text-xs text-muted-foreground">
-                Active projects
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Team Members</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">1</div>
-              <p className="text-xs text-muted-foreground">
-                Collaborators
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Settings</CardTitle>
-              <Settings className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">Profile</div>
-              <p className="text-xs text-muted-foreground">
-                Manage your account
-              </p>
-            </CardContent>
-          </Card>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {stats.map((stat, index) => {
+            const Icon = stat.icon;
+            return (
+              <Card key={index} className="construction-card hover:shadow-md transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-muted-foreground">
+                        {stat.title}
+                      </p>
+                      <p className="text-3xl font-bold text-foreground">
+                        {stat.value}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {stat.description}
+                      </p>
+                    </div>
+                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Icon className="h-6 w-6 text-primary" />
+                    </div>
+                  </div>
+                  <div className="mt-4 flex items-center">
+                    <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
+                    <span className="text-xs text-green-600">
+                      {stat.trend}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         {/* Recent Projects */}
-        <Card>
+        <Card className="construction-card">
           <CardHeader>
-            <CardTitle>Recent Projects</CardTitle>
-            <CardDescription>
-              Your latest construction drawing projects
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-xl">Recent Projects</CardTitle>
+                <CardDescription>
+                  Your latest construction drawing projects
+                </CardDescription>
+              </div>
+              <Button variant="outline">View All</Button>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8 text-muted-foreground">
-              <FolderOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No projects yet. Create your first project to get started!</p>
-              <Button className="mt-4">
-                <Plus className="mr-2 h-4 w-4" />
-                Create Project
-              </Button>
-            </div>
+            {recentProjects.length > 0 ? (
+              <div className="space-y-4">
+                {recentProjects.map((project) => (
+                  <div key={project.id} className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center space-x-4">
+                      <div className={`p-2 rounded-full ${getStatusColor(project.status)}`}>
+                        {getStatusIcon(project.status)}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-foreground">{project.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {project.filesCount} files • Updated {project.lastUpdated}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      <div className="text-right">
+                        <p className="text-sm font-medium text-foreground">{project.progress}%</p>
+                        <div className="w-20 h-2 bg-muted rounded-full mt-1">
+                          <div 
+                            className="h-full bg-primary rounded-full transition-all"
+                            style={{ width: `${project.progress}%` }}
+                          />
+                        </div>
+                      </div>
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full capitalize ${getStatusColor(project.status)}`}>
+                        {project.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <FolderOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">No projects yet</h3>
+                <p className="text-muted-foreground mb-6">
+                  Create your first project to start generating AI-powered backing drawings.
+                </p>
+                <Button className="construction-gradient text-white">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Your First Project
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* User Info */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div>
-                <span className="font-medium">Name:</span> {user?.full_name}
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Card className="construction-card hover:shadow-md transition-shadow cursor-pointer group">
+            <CardContent className="p-6 text-center">
+              <div className="h-12 w-12 rounded-full construction-gradient flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                <Plus className="h-6 w-6 text-white" />
               </div>
-              <div>
-                <span className="font-medium">Email:</span> {user?.email}
-              </div>
-              <div>
-                <span className="font-medium">Company:</span> {user?.company_name}
-              </div>
-              <div>
-                <span className="font-medium">Role:</span> 
-                <span className="ml-2 px-2 py-1 text-xs rounded-full bg-primary/10 text-primary">
-                  {user?.role}
-                </span>
-              </div>
+              <h3 className="font-semibold text-foreground mb-2">Start New Project</h3>
+              <p className="text-sm text-muted-foreground">
+                Upload contract drawings and generate backing drawings with AI
+              </p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Getting Started</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center">
-                  <div className="w-2 h-2 bg-primary rounded-full mr-3"></div>
-                  Create your first project
-                </li>
-                <li className="flex items-center">
-                  <div className="w-2 h-2 bg-muted rounded-full mr-3"></div>
-                  Upload contract drawings
-                </li>
-                <li className="flex items-center">
-                  <div className="w-2 h-2 bg-muted rounded-full mr-3"></div>
-                  Generate AI backing drawings
-                </li>
-                <li className="flex items-center">
-                  <div className="w-2 h-2 bg-muted rounded-full mr-3"></div>
-                  Review and approve results
-                </li>
-              </ul>
+          <Card className="construction-card hover:shadow-md transition-shadow cursor-pointer group">
+            <CardContent className="p-6 text-center">
+              <div className="h-12 w-12 rounded-full bg-blue-500 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                <Users className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="font-semibold text-foreground mb-2">Invite Team</h3>
+              <p className="text-sm text-muted-foreground">
+                Collaborate with engineers, reviewers, and other stakeholders
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="construction-card hover:shadow-md transition-shadow cursor-pointer group">
+            <CardContent className="p-6 text-center">
+              <div className="h-12 w-12 rounded-full bg-purple-500 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                <Settings className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="font-semibold text-foreground mb-2">Configure Settings</h3>
+              <p className="text-sm text-muted-foreground">
+                Customize drawing standards and AI processing preferences
+              </p>
             </CardContent>
           </Card>
         </div>
-      </main>
-    </div>
+      </div>
+    </MainLayout>
   );
 }
