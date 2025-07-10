@@ -35,7 +35,7 @@ export function AppShell({ children }: AppShellProps) {
       const activeElement = document.activeElement;
       return activeElement?.tagName === 'INPUT' || 
              activeElement?.tagName === 'TEXTAREA' || 
-             activeElement?.contentEditable === 'true';
+             (activeElement as HTMLElement)?.contentEditable === 'true';
     };
 
     const handleKeyboard = (e: KeyboardEvent) => {
@@ -52,7 +52,9 @@ export function AppShell({ children }: AppShellProps) {
       // Save with Ctrl+S
       if (e.ctrlKey && e.key === 's') {
         e.preventDefault();
-        toast.success('Project saved automatically');
+        toast({
+          title: "Project saved automatically"
+        });
       }
     };
     

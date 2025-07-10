@@ -1,3 +1,5 @@
+import React from 'react';
+
 // Performance monitoring utilities for the backing generator app
 
 interface PerformanceMetrics {
@@ -261,7 +263,7 @@ export function withPerformanceMonitoring<P extends object>(
       measureEnd();
     });
     
-    return <WrappedComponent {...props} />;
+    return React.createElement(WrappedComponent, props);
   };
 }
 
