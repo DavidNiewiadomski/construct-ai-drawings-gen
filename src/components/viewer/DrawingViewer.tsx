@@ -40,18 +40,15 @@ import { usePanAndZoom } from '@/hooks/usePanAndZoom';
 import { useBackingPlacement } from '@/hooks/useBackingPlacement';
 import { useMeasurements } from '@/hooks/useMeasurements';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useHistory } from '@/hooks/useHistory';
 import { coordinateSystem } from '@/utils/coordinateSystem';
 import { useToast } from '@/hooks/use-toast';
+import { HistoryControls, showHistoryToast } from '@/components/editor/HistoryControls';
 
 interface DrawingViewerProps {
   drawingUrl?: string;
   backings: BackingType[];
   onBackingsChange: (backings: BackingType[]) => void;
-}
-
-interface HistoryState {
-  backings: BackingType[];
-  timestamp: number;
 }
 
 export function DrawingViewer({ drawingUrl, backings, onBackingsChange }: DrawingViewerProps) {
@@ -60,8 +57,6 @@ export function DrawingViewer({ drawingUrl, backings, onBackingsChange }: Drawin
   const [currentMousePosition, setCurrentMousePosition] = useState<{ x: number; y: number } | null>(null);
   const [selectedBackings, setSelectedBackings] = useState<string[]>([]);
   const [clipboard, setClipboard] = useState<BackingType[]>([]);
-  const [history, setHistory] = useState<HistoryState[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
   const [isMultiSelecting, setIsMultiSelecting] = useState(false);
   const [selectionBox, setSelectionBox] = useState<{ start: { x: number; y: number }; end: { x: number; y: number } } | null>(null);
   
@@ -69,6 +64,63 @@ export function DrawingViewer({ drawingUrl, backings, onBackingsChange }: Drawin
   
   const { tool: selectedTool, selectedBackingId: selectedBacking, layers, selectBacking } = useViewerStore();
   
+  // Enhanced history management
+  const {
+    state: historyBackings,
+    pushHistory,
+    pushHistoryImmediate,
+    undo: performUndo,
+    redo: performRedo,
+    canUndo,
+    canRedo,
+    undoAction,
+    redoAction,
+    undoDescription,
+    redoDescription,
+    historySize,
+    currentAction,
+    currentDescription
+  } = useHistory(backings, {
+    maxHistorySize: 50,
+    debounceMs: 300,
+    enableGrouping: true
+  });
+
+  // Sync history state with props
+  useEffect(() => {
+    onBackingsChange(historyBackings);
+  }, [historyBackings, onBackingsChange]);
+  
+  // Enhanced backing change handler with history
+  const handleBackingsChangeWithHistory = useCallback((
+    newBackings: BackingType[], 
+    action?: string, 
+    description?: string,
+    immediate = false
+  ) => {
+    if (immediate) {
+      pushHistoryImmediate(newBackings, action, description);
+    } else {
+      pushHistory(newBackings, action, description);
+    }
+  }, [pushHistory, pushHistoryImmediate]);
+
+  // Undo functionality with enhanced feedback
+  const handleUndo = useCallback(() => {
+    if (canUndo) {
+      performUndo();
+      showHistoryToast('undo', undoAction || undefined, toast);
+    }
+  }, [canUndo, performUndo, undoAction, toast]);
+
+  // Redo functionality with enhanced feedback  
+  const handleRedo = useCallback(() => {
+    if (canRedo) {
+      performRedo();
+      showHistoryToast('redo', redoAction || undefined, toast);
+    }
+  }, [canRedo, performRedo, redoAction, toast]);
+
   // Custom hooks for managing different aspects
   const {
     pdfContainerRef,
@@ -108,52 +160,6 @@ export function DrawingViewer({ drawingUrl, backings, onBackingsChange }: Drawin
     deleteMeasurement,
     clearAllMeasurements
   } = useMeasurements();
-
-  // History management
-  const addToHistory = useCallback((newBackings: BackingType[]) => {
-    const newState: HistoryState = {
-      backings: JSON.parse(JSON.stringify(newBackings)),
-      timestamp: Date.now()
-    };
-    
-    const newHistory = history.slice(0, historyIndex + 1);
-    newHistory.push(newState);
-    
-    // Limit history to 50 items
-    if (newHistory.length > 50) {
-      newHistory.shift();
-    } else {
-      setHistoryIndex(historyIndex + 1);
-    }
-    
-    setHistory(newHistory);
-  }, [history, historyIndex]);
-
-  // Enhanced backing change handler with history
-  const handleBackingsChangeWithHistory = useCallback((newBackings: BackingType[]) => {
-    addToHistory(backings); // Add current state to history before changing
-    onBackingsChange(newBackings);
-  }, [backings, onBackingsChange, addToHistory]);
-
-  // Undo functionality
-  const handleUndo = useCallback(() => {
-    if (historyIndex >= 0) {
-      const previousState = history[historyIndex];
-      setHistoryIndex(historyIndex - 1);
-      onBackingsChange(previousState.backings);
-      toast({ title: "Undone", description: "Last action has been undone" });
-    }
-  }, [history, historyIndex, onBackingsChange, toast]);
-
-  // Redo functionality
-  const handleRedo = useCallback(() => {
-    if (historyIndex < history.length - 1) {
-      const nextState = history[historyIndex + 1];
-      setHistoryIndex(historyIndex + 1);
-      onBackingsChange(nextState.backings);
-      toast({ title: "Redone", description: "Action has been redone" });
-    }
-  }, [history, historyIndex, onBackingsChange, toast]);
 
   // Copy selected backings
   const handleCopy = useCallback(() => {
@@ -511,8 +517,6 @@ export function DrawingViewer({ drawingUrl, backings, onBackingsChange }: Drawin
 
   const selectedBackingData = backings.find(b => b.id === selectedBacking);
   const showMeasurementPanel = selectedTool === 'measure' || measurements.length > 0;
-  const canUndo = historyIndex >= 0;
-  const canRedo = historyIndex < history.length - 1;
 
   return (
     <div className="h-full flex flex-col bg-slate-900">
@@ -552,28 +556,21 @@ export function DrawingViewer({ drawingUrl, backings, onBackingsChange }: Drawin
 
           <Separator orientation="vertical" className="h-6" />
 
-          {/* Undo/Redo */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleUndo}
-            disabled={!canUndo}
-            className="h-8 w-8 p-0"
-            title="Undo (Ctrl+Z)"
-          >
-            <RotateCcw className="h-4 w-4" />
-          </Button>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRedo}
-            disabled={!canRedo}
-            className="h-8 w-8 p-0"
-            title="Redo (Ctrl+Y)"
-          >
-            <RotateCw className="h-4 w-4" />
-          </Button>
+          {/* Enhanced History Controls */}
+          <HistoryControls
+            canUndo={canUndo}
+            canRedo={canRedo}
+            undoAction={undoAction}
+            redoAction={redoAction}
+            undoDescription={undoDescription}
+            redoDescription={redoDescription}
+            historySize={historySize}
+            currentAction={currentAction}
+            currentDescription={currentDescription}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            className="flex items-center gap-1"
+          />
 
           <Separator orientation="vertical" className="h-6" />
 
