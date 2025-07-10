@@ -2,10 +2,7 @@ import { pdfjs } from 'react-pdf';
 import { fileTypeFromBuffer } from 'file-type';
 
 // Set up PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.js',
-  import.meta.url,
-).toString();
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@4.10.38/build/pdf.worker.min.js`;
 
 export class FileProcessingService {
   static async generatePDFThumbnail(file: File): Promise<string> {
