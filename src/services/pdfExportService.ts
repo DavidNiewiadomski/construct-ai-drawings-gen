@@ -31,6 +31,8 @@ interface ExportConfig {
     height: number;
     heightAFF: number;
     status: 'ai_generated' | 'user_modified' | 'approved';
+    specReference?: string;
+    ruleSource?: 'specification' | 'manual' | 'ai_generated' | 'standard';
   }>;
   dimensions?: Array<{
     start: { x: number; y: number };
@@ -324,13 +326,31 @@ export class PDFExportService {
         // Height above finished floor
         pdf.setFontSize(6);
         pdf.text(`@ ${backing.heightAFF}"`, labelX, labelY + 0.1, { align: 'center' });
+        
+        // Specification reference if available
+        if (backing.specReference) {
+          pdf.setFontSize(5);
+          pdf.text(backing.specReference, labelX, labelY + 0.2, { align: 'center' });
+        }
       }
       
-      // Add backing number
+      // Add backing number with source indicator
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(6);
       pdf.setTextColor(0, 0, 0);
-      pdf.text(`B${index + 1}`, x + 0.05, y + 0.15);
+      
+      let backingLabel = `B${index + 1}`;
+      if (backing.ruleSource) {
+        const sourceIndicators = {
+          'specification': 'S',
+          'manual': 'M', 
+          'ai_generated': 'AI',
+          'standard': 'ST'
+        };
+        backingLabel += `-${sourceIndicators[backing.ruleSource] || 'M'}`;
+      }
+      
+      pdf.text(backingLabel, x + 0.05, y + 0.15);
     });
   }
 
@@ -474,9 +494,9 @@ export class PDFExportService {
       this.drawEnhancedScaleBar(pdf, elements.scaleBar);
     }
 
-    // Draw Backing Legend
+    // Enhanced legend with spec references
     if (elements.legend?.enabled) {
-      this.drawBackingLegend(pdf, elements.legend);
+      this.drawEnhancedBackingLegend(pdf, elements.legend, config.backings);
     }
 
     // Draw General Notes
@@ -602,15 +622,19 @@ export class PDFExportService {
   }
 
   /**
-   * Draw backing legend
+   * Draw enhanced backing legend with specification references
    */
-  private static drawBackingLegend(pdf: jsPDF, legend: NonNullable<ExportConfig['professionalElements']>['legend']): void {
+  private static drawEnhancedBackingLegend(
+    pdf: jsPDF, 
+    legend: NonNullable<ExportConfig['professionalElements']>['legend'],
+    backings: ExportConfig['backings']
+  ): void {
     if (!legend) return;
 
     const { position, backingTypes } = legend;
-    const itemHeight = 0.2;
-    const totalHeight = backingTypes.length * itemHeight + 0.4;
-    const width = 3;
+    const itemHeight = 0.25;
+    const totalHeight = backingTypes.length * itemHeight + 0.6;
+    const width = 4;
     
     // Background box
     pdf.setFillColor(255, 255, 255);
@@ -624,9 +648,9 @@ export class PDFExportService {
     pdf.setTextColor(0, 0, 0);
     pdf.text('BACKING LEGEND', position.x + 0.1, position.y + 0.15);
     
-    // Legend items
+    // Legend items with source indicators
     backingTypes.forEach((backing, index) => {
-      const y = position.y + 0.3 + index * itemHeight;
+      const y = position.y + 0.35 + index * itemHeight;
       
       // Color square
       const colorRgb = this.hexToRgb(backing.color);
@@ -634,18 +658,40 @@ export class PDFExportService {
       pdf.setDrawColor(0, 0, 0);
       pdf.rect(position.x + 0.1, y - 0.05, 0.15, 0.1, 'FD');
       
-      // Text
+      // Backing type
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(8);
       pdf.text(backing.type, position.x + 0.3, y);
       
+      // Description
       pdf.setFont('helvetica', 'normal');
       pdf.text(backing.description, position.x + 1.2, y);
       
+      // Count
       if (backing.count) {
-        pdf.text(`(${backing.count})`, position.x + width - 0.3, y);
+        pdf.text(`(${backing.count})`, position.x + width - 0.8, y);
+      }
+      
+      // Source indicators
+      const specCount = backings.filter(b => 
+        b.type === backing.type && b.ruleSource === 'specification'
+      ).length;
+      
+      if (specCount > 0) {
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(6);
+        pdf.setTextColor(0, 100, 0);
+        pdf.text(`${specCount}S`, position.x + width - 0.3, y - 0.02);
+        pdf.setTextColor(0, 0, 0);
       }
     });
+    
+    // Legend footer with source indicators
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(6);
+    pdf.setTextColor(100, 100, 100);
+    const footerY = position.y + totalHeight - 0.15;
+    pdf.text('S=Specification, M=Manual, AI=Generated, ST=Standard', position.x + 0.1, footerY);
   }
 
   /**

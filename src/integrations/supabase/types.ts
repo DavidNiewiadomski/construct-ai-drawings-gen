@@ -58,6 +58,87 @@ export type Database = {
           },
         ]
       }
+      backing_rules: {
+        Row: {
+          backing_type: string
+          component_type: string
+          conditions: string | null
+          created_at: string | null
+          created_by: string
+          height_aff: number
+          id: string
+          is_active: boolean | null
+          notes: string | null
+          priority: number | null
+          project_id: string
+          requirement_id: string | null
+          source_reference: string | null
+          source_type: string
+          updated_at: string | null
+          weight_max: number | null
+          weight_min: number | null
+          width_max: number | null
+          width_min: number | null
+        }
+        Insert: {
+          backing_type: string
+          component_type: string
+          conditions?: string | null
+          created_at?: string | null
+          created_by?: string
+          height_aff?: number
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          priority?: number | null
+          project_id: string
+          requirement_id?: string | null
+          source_reference?: string | null
+          source_type?: string
+          updated_at?: string | null
+          weight_max?: number | null
+          weight_min?: number | null
+          width_max?: number | null
+          width_min?: number | null
+        }
+        Update: {
+          backing_type?: string
+          component_type?: string
+          conditions?: string | null
+          created_at?: string | null
+          created_by?: string
+          height_aff?: number
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          priority?: number | null
+          project_id?: string
+          requirement_id?: string | null
+          source_reference?: string | null
+          source_type?: string
+          updated_at?: string | null
+          weight_max?: number | null
+          weight_min?: number | null
+          width_max?: number | null
+          width_min?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "backing_rules_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "backing_rules_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: false
+            referencedRelation: "specification_requirements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       change_history: {
         Row: {
           action: string
@@ -262,6 +343,71 @@ export type Database = {
           },
         ]
       }
+      specification_requirements: {
+        Row: {
+          applied: boolean | null
+          applied_at: string | null
+          backing_type: string | null
+          component_type: string | null
+          confidence: number | null
+          created_at: string | null
+          dimensions: Json | null
+          file_id: string
+          height_aff: number | null
+          id: string
+          notes: string | null
+          page_number: number | null
+          requirement_text: string
+          spec_section: string
+          updated_at: string | null
+          weight_capacity: number | null
+        }
+        Insert: {
+          applied?: boolean | null
+          applied_at?: string | null
+          backing_type?: string | null
+          component_type?: string | null
+          confidence?: number | null
+          created_at?: string | null
+          dimensions?: Json | null
+          file_id: string
+          height_aff?: number | null
+          id?: string
+          notes?: string | null
+          page_number?: number | null
+          requirement_text: string
+          spec_section: string
+          updated_at?: string | null
+          weight_capacity?: number | null
+        }
+        Update: {
+          applied?: boolean | null
+          applied_at?: string | null
+          backing_type?: string | null
+          component_type?: string | null
+          confidence?: number | null
+          created_at?: string | null
+          dimensions?: Json | null
+          file_id?: string
+          height_aff?: number | null
+          id?: string
+          notes?: string | null
+          page_number?: number | null
+          requirement_text?: string
+          spec_section?: string
+          updated_at?: string | null
+          weight_capacity?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "specification_requirements_file_id_fkey"
+            columns: ["file_id"]
+            isOneToOne: false
+            referencedRelation: "uploaded_files"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       uploaded_files: {
         Row: {
           file_name: string
@@ -269,10 +415,12 @@ export type Database = {
           file_type: Database["public"]["Enums"]["file_type"]
           file_url: string
           id: string
+          is_specification: boolean | null
           metadata: Json | null
           mime_type: string
           processing_status: Database["public"]["Enums"]["processing_status"]
           project_id: string
+          spec_sections: Json | null
           uploaded_at: string
           uploaded_by: string
         }
@@ -282,10 +430,12 @@ export type Database = {
           file_type: Database["public"]["Enums"]["file_type"]
           file_url: string
           id?: string
+          is_specification?: boolean | null
           metadata?: Json | null
           mime_type: string
           processing_status?: Database["public"]["Enums"]["processing_status"]
           project_id: string
+          spec_sections?: Json | null
           uploaded_at?: string
           uploaded_by: string
         }
@@ -295,10 +445,12 @@ export type Database = {
           file_type?: Database["public"]["Enums"]["file_type"]
           file_url?: string
           id?: string
+          is_specification?: boolean | null
           metadata?: Json | null
           mime_type?: string
           processing_status?: Database["public"]["Enums"]["processing_status"]
           project_id?: string
+          spec_sections?: Json | null
           uploaded_at?: string
           uploaded_by?: string
         }
