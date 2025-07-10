@@ -18,6 +18,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import {
   Plus,
@@ -29,8 +35,12 @@ import {
   SortAsc,
   SortDesc,
   Ruler,
-  ChevronDown
+  ChevronDown,
+  FileText,
+  AlertCircle,
+  CheckCircle
 } from 'lucide-react';
+import { StandardsImportExport, type ImportResult } from '@/services/standardsImportExport';
 
 export interface BackingStandard {
   id: string;
@@ -218,6 +228,8 @@ export function BackingStandardsLibrary() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [sortField, setSortField] = useState<SortField>('componentType');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
   const { toast } = useToast();
 
   // Filter and sort standards
@@ -290,49 +302,84 @@ export function BackingStandardsLibrary() {
       <SortDesc className="h-4 w-4" />;
   };
 
-  const handleExport = () => {
-    const dataStr = JSON.stringify(standards, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'backing-standards.json';
-    link.click();
-    URL.revokeObjectURL(url);
-    
-    toast({
-      title: "Standards Exported",
-      description: "Your backing standards have been exported successfully."
-    });
+  const handleExport = async (format: 'csv' | 'json') => {
+    try {
+      await StandardsImportExport.downloadStandards(standards, format);
+      toast({
+        title: "Standards Exported",
+        description: `Your backing standards have been exported as ${format.toUpperCase()}.`
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Failed to export standards. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const importedStandards = JSON.parse(e.target?.result as string);
-        setStandards(prev => [...prev, ...importedStandards.map((std: any) => ({
+    // Validate file
+    const validation = StandardsImportExport.validateFile(file);
+    if (!validation.valid) {
+      toast({
+        title: "Invalid File",
+        description: validation.error,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsImporting(true);
+    setImportResult(null);
+
+    try {
+      let result: ImportResult;
+      
+      if (file.name.toLowerCase().endsWith('.csv')) {
+        result = await StandardsImportExport.importFromCSV(file);
+      } else {
+        result = await StandardsImportExport.importFromJSON(file);
+      }
+
+      setImportResult(result);
+
+      if (result.success && result.standards.length > 0) {
+        // Add imported standards with unique IDs
+        const newStandards = result.standards.map(std => ({
           ...std,
-          id: `imported_${Date.now()}_${Math.random()}`,
-          source: 'imported',
+          id: `imported_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          source: 'imported' as const,
           lastUpdated: new Date()
-        }))]);
+        }));
+
+        setStandards(prev => [...prev, ...newStandards]);
+
         toast({
-          title: "Standards Imported",
-          description: `Imported ${importedStandards.length} backing standards.`
+          title: "Import Successful",
+          description: `Imported ${result.standards.length} backing standards.`
         });
-      } catch (error) {
+      } else {
         toast({
           title: "Import Failed",
-          description: "Invalid file format. Please upload a valid JSON file.",
+          description: result.errors[0] || "No valid standards found in file.",
           variant: "destructive"
         });
       }
-    };
-    reader.readAsText(file);
+    } catch (error) {
+      toast({
+        title: "Import Error",
+        description: "An unexpected error occurred during import.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsImporting(false);
+      // Reset file input
+      event.target.value = '';
+    }
   };
 
   const getConditionsText = (conditions: BackingStandard['conditions']) => {
@@ -403,20 +450,36 @@ export function BackingStandardsLibrary() {
           </Select>
           
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={handleExport}>
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => handleExport('csv')}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Export as CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport('json')}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Export as JSON
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             
-            <Button size="sm" variant="outline" asChild>
+            <Button size="sm" variant="outline" asChild disabled={isImporting}>
               <label>
                 <Upload className="h-4 w-4 mr-2" />
-                Import
+                {isImporting ? 'Importing...' : 'Import'}
                 <input
                   type="file"
-                  accept=".json"
+                  accept=".json,.csv,.txt"
                   onChange={handleImport}
                   className="hidden"
+                  disabled={isImporting}
                 />
               </label>
             </Button>
@@ -428,7 +491,45 @@ export function BackingStandardsLibrary() {
           </div>
         </div>
 
-        {/* Summary */}
+        {/* Import Results */}
+        {importResult && (
+          <Card className="animate-fade-in">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                {importResult.success ? (
+                  <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                ) : (
+                  <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+                )}
+                <div className="flex-1">
+                  <h4 className="font-medium mb-2">
+                    Import {importResult.success ? 'Completed' : 'Failed'}
+                  </h4>
+                  <div className="space-y-1 text-sm">
+                    {importResult.warnings.map((warning, index) => (
+                      <p key={index} className="text-yellow-600">{warning}</p>
+                    ))}
+                    {importResult.errors.map((error, index) => (
+                      <p key={index} className="text-red-600">{error}</p>
+                    ))}
+                  </div>
+                  {importResult.success && (
+                    <div className="mt-2 text-sm text-muted-foreground">
+                      Successfully imported {importResult.standards.length} standards
+                    </div>
+                  )}
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setImportResult(null)}
+                >
+                  ×
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
         <div className="grid grid-cols-2 md:grid-cols-6 gap-4 p-4 bg-muted/50 rounded-lg">
           <div className="text-center">
             <div className="text-lg font-semibold">{filteredStandards.length}</div>
