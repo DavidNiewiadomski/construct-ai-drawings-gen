@@ -4,7 +4,7 @@ import '@react-pdf-viewer/core/lib/styles/index.css';
 import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 
 // Set up PDF.js worker
-const workerUrl = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
+const workerUrl = `https://unpkg.com/pdfjs-dist@4.10.38/build/pdf.worker.min.js`;
 
 interface PDFViewerLayerProps {
   drawingUrl?: string;
