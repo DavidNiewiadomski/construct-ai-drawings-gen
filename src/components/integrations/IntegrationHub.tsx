@@ -97,7 +97,14 @@ export function IntegrationHub() {
       const savedIntegrations = await IntegrationService.getConnectedIntegrations();
       setIntegrations(prev => prev.map(integration => {
         const saved = savedIntegrations.find(s => s.id === integration.id);
-        return saved ? { ...integration, ...saved } : integration;
+        if (saved) {
+          // Convert lastSync string back to Date object if it exists
+          if (saved.lastSync && typeof saved.lastSync === 'string') {
+            saved.lastSync = new Date(saved.lastSync);
+          }
+          return { ...integration, ...saved };
+        }
+        return integration;
       }));
     } catch (error) {
       console.error('Failed to load integrations:', error);
