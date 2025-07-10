@@ -32,6 +32,10 @@ export interface DetectedComponent {
 export interface BackingPlacement {
   id: string;
   componentId: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
   backingType: '2x4' | '2x6' | '2x8' | '2x10' | '3/4_plywood' | 'steel_plate' | 'blocking';
   dimensions: {
     width: number;
@@ -45,6 +49,8 @@ export interface BackingPlacement {
   };
   orientation: number; // rotation in degrees
   status: 'ai_generated' | 'user_modified' | 'approved';
+  optimized?: boolean;
+  zoneId?: string;
 }
 
 export interface BackingRule {
@@ -171,12 +177,44 @@ export interface Point {
   y: number;
 }
 
+export interface Opening {
+  id: string;
+  type: 'door' | 'window' | 'opening';
+  position: Point;
+  width: number;
+  height?: number;
+}
+
+export interface DoorOpening {
+  id: string;
+  wallId: string;
+  position: Point;
+  width: number;
+  height: number;
+  type: 'door' | 'window' | 'opening';
+  swingDirection?: 'left' | 'right';
+  clearanceRequired: number;
+  confidence: number;
+}
+
+export interface DetectionResults {
+  type: 'walls' | 'doors' | 'conflicts' | 'optimization';
+  walls?: WallSegment[];
+  doors?: DoorOpening[];
+  conflicts?: Clash[];
+  optimizedBackings?: BackingPlacement[];
+}
+
 export interface WallSegment {
   id: string;
   start: Point;
   end: Point;
+  startPoint: Point;
+  endPoint: Point;
   thickness: number;
+  length: number;
   type: 'interior' | 'exterior' | 'partition';
+  openings?: Opening[];
 }
 
 export interface Clash {
@@ -258,6 +296,14 @@ export interface BackingZone {
     material: number;
     laborHours: number;
   };
+  backings: BackingPlacement[];
+  totalArea: number;
+  materialType: string;
+  bounds: {
+    width: number;
+    height: number;
+  };
+  center: Point;
 }
 
 export interface Dimension {

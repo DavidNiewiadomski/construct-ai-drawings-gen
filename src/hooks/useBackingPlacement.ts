@@ -25,6 +25,10 @@ export function useBackingPlacement(
     const newBacking: BackingType = {
       id: crypto.randomUUID(),
       componentId: '',
+      x: finalPos.x,
+      y: finalPos.y,
+      width: 48,
+      height: 24,
       backingType: '2x6',
       dimensions: { width: 48, height: 24, thickness: 6 },
       location: { x: finalPos.x, y: finalPos.y, z: 42 },

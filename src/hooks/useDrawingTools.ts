@@ -171,6 +171,10 @@ export const useDrawingTools = ({
             const newBacking: BackingType = {
               id: crypto.randomUUID(),
               componentId: `backing-${Date.now()}`,
+              x: drawingPreview.start.x,
+              y: drawingPreview.start.y,
+              width: drawingPreview.width,
+              height: drawingPreview.height,
               backingType: '2x6', // Default type
               dimensions: {
                 width: drawingPreview.width,

@@ -59,13 +59,25 @@ class IntelligenceService {
       
       grouped.forEach((group, index) => {
         if (group.length > 1) {
+          const combined = this.combineBacking(group);
           zones.push({
             id: `zone-${index}`,
             components: group.map(b => b.componentId),
-            combinedBacking: this.combineBacking(group),
+            combinedBacking: combined,
             savings: {
-              material: group.length * 0.2, // 20% material savings per backing
-              laborHours: group.length * 0.5, // 30 minutes saved per backing
+              material: group.length * 0.2,
+              laborHours: group.length * 0.5,
+            },
+            backings: group,
+            totalArea: group.reduce((sum, b) => sum + (b.width * b.height), 0),
+            materialType: group[0].backingType,
+            bounds: {
+              width: Math.max(...group.map(b => b.width)),
+              height: Math.max(...group.map(b => b.height)),
+            },
+            center: {
+              x: group.reduce((sum, b) => sum + b.x, 0) / group.length,
+              y: group.reduce((sum, b) => sum + b.y, 0) / group.length,
             },
           });
         }
@@ -112,6 +124,9 @@ class IntelligenceService {
         id: 'wall-1',
         start: { x: 0, y: 0 },
         end: { x: 240, y: 0 },
+        startPoint: { x: 0, y: 0 },
+        endPoint: { x: 240, y: 0 },
+        length: 240,
         thickness: 6,
         type: 'exterior',
       },
@@ -119,6 +134,9 @@ class IntelligenceService {
         id: 'wall-2',
         start: { x: 240, y: 0 },
         end: { x: 240, y: 120 },
+        startPoint: { x: 240, y: 0 },
+        endPoint: { x: 240, y: 120 },
+        length: 120,
         thickness: 6,
         type: 'exterior',
       },
@@ -126,6 +144,9 @@ class IntelligenceService {
         id: 'wall-3',
         start: { x: 240, y: 120 },
         end: { x: 0, y: 120 },
+        startPoint: { x: 240, y: 120 },
+        endPoint: { x: 0, y: 120 },
+        length: 240,
         thickness: 6,
         type: 'exterior',
       },
@@ -133,6 +154,9 @@ class IntelligenceService {
         id: 'wall-4',
         start: { x: 0, y: 120 },
         end: { x: 0, y: 0 },
+        startPoint: { x: 0, y: 120 },
+        endPoint: { x: 0, y: 0 },
+        length: 120,
         thickness: 6,
         type: 'exterior',
       },
@@ -216,6 +240,10 @@ class IntelligenceService {
     return {
       id: `combined-${Date.now()}`,
       componentId: 'combined',
+      x: minX,
+      y: minY,
+      width: maxX - minX,
+      height: maxY - minY,
       backingType: backings[0].backingType,
       dimensions: {
         width: maxX - minX,

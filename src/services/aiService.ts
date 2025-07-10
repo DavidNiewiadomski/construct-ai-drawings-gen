@@ -231,6 +231,10 @@ export class AIService {
         placements.push({
           id: `backing-${component.id}`,
           componentId: component.id,
+          x: component.boundingBox.x - (rule.backing.width - component.boundingBox.width) / 2,
+          y: component.boundingBox.y - (rule.backing.height - component.boundingBox.height) / 2,
+          width: rule.backing.width,
+          height: rule.backing.height,
           backingType: rule.backing.type as any,
           dimensions: {
             width: rule.backing.width,
