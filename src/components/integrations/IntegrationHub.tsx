@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +15,9 @@ import {
   Plus,
   Building,
   FileText,
-  Calendar
+  Calendar,
+  Home,
+  HelpCircle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ProcoreConnector } from './ProcoreConnector';
@@ -87,6 +90,7 @@ export function IntegrationHub() {
   const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null);
   const [showConnector, setShowConnector] = useState<string | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadIntegrations();
@@ -286,26 +290,55 @@ export function IntegrationHub() {
   const connectedIntegrations = integrations.filter(i => i.status === 'connected');
 
   return (
-    <div className="integration-hub space-y-6">
-      <div className="hub-header">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">Cloud Integrations</h2>
-            <p className="text-muted-foreground">
-              Connect to your construction management platforms to import drawings directly
-            </p>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b border-border bg-card">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">
+                Cloud Integrations
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Connect to your construction management platforms to import drawings directly
+              </p>
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              {/* Navigation buttons */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/')}
+              >
+                <Home className="h-4 w-4 mr-2" />
+                Home
+              </Button>
+              
+              <Button
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate('/settings')}
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Settings
+              </Button>
+              
+              <Button
+                variant="outline"
+                onClick={() => window.location.reload()}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Refresh All
+              </Button>
+            </div>
           </div>
-          
-          <Button
-            variant="outline"
-            onClick={() => window.location.reload()}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Refresh All
-          </Button>
         </div>
-      </div>
+      </header>
+
+      {/* Main Content */}
+      <div className="container mx-auto px-6 py-6 space-y-6">
 
       <Tabs defaultValue="available" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
@@ -499,6 +532,7 @@ export function IntegrationHub() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
