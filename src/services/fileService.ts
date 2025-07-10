@@ -137,7 +137,9 @@ export class FileService {
           id: file.id,
           filename: file.name,
           fileType: file.type,
-          fileUrl: '/placeholder.svg', // Use placeholder for demo
+          fileUrl: file.type === 'contract_drawing' 
+            ? 'https://pdfobject.com/pdf/sample.pdf' // Use a sample PDF for demo
+            : '/placeholder.svg',
           fileSize: file.size,
           uploadDate: file.uploadedAt,
           status: 'ready' as const,

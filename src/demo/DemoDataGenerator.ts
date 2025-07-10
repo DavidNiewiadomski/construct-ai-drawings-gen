@@ -59,37 +59,52 @@ export class DemoDataGenerator {
     return [
       {
         id: 'backing-1',
-        x: 450,
-        y: 320,
-        width: 160,
-        height: 120,
+        dimensions: {
+          width: 160,
+          height: 120,
+          thickness: 0.75
+        },
+        location: {
+          x: 450,
+          y: 320,
+          z: 48
+        },
         backingType: '3/4" Plywood',
         componentType: '75" Display',
-        location: { z: 48 },
         status: 'ai_generated',
         confidence: 0.94
       },
       {
         id: 'backing-2',
-        x: 1200,
-        y: 520,
-        width: 200,
-        height: 150,
+        dimensions: {
+          width: 200,
+          height: 150,
+          thickness: 0.75
+        },
+        location: {
+          x: 1200,
+          y: 520,
+          z: 42
+        },
         backingType: '3/4" Plywood',
         componentType: '86" Interactive Display',
-        location: { z: 42 },
         status: 'user_modified',
         confidence: 0.89
       },
       {
         id: 'backing-3',
-        x: 180,
-        y: 680,
-        width: 100,
-        height: 120,
+        dimensions: {
+          width: 100,
+          height: 120,
+          thickness: 1.5
+        },
+        location: {
+          x: 180,
+          y: 680,
+          z: 60
+        },
         backingType: '2x8 Blocking',
         componentType: 'Electrical Panel',
-        location: { z: 60 },
         status: 'ai_generated',
         confidence: 0.96
       }
