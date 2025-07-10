@@ -44,6 +44,46 @@ interface ExportConfig {
     totalLength?: number;
     totalArea?: number;
   }>;
+  professionalElements?: {
+    northArrow?: {
+      enabled: boolean;
+      position: { x: number; y: number };
+      rotation: number;
+      scale: number;
+    };
+    scaleBar?: {
+      enabled: boolean;
+      position: { x: number; y: number };
+      scale: number;
+      units: 'imperial' | 'metric';
+    };
+    legend?: {
+      enabled: boolean;
+      position: { x: number; y: number };
+      backingTypes: Array<{
+        type: string;
+        color: string;
+        description: string;
+        count?: number;
+      }>;
+    };
+    generalNotes?: {
+      enabled: boolean;
+      position: { x: number; y: number };
+      notes: string[];
+      title?: string;
+    };
+    revisionTable?: {
+      enabled: boolean;
+      position: { x: number; y: number };
+      revisions: Array<{
+        number: string;
+        date: string;
+        description: string;
+        by: string;
+      }>;
+    };
+  };
 }
 
 export class PDFExportService {
@@ -89,6 +129,11 @@ export class PDFExportService {
 
     // Add scale indicator
     this.drawScaleIndicator(pdf, config);
+    
+    // Add professional drawing elements
+    if (config.professionalElements) {
+      this.drawProfessionalElements(pdf, config);
+    }
     
     return new Blob([pdf.output('arraybuffer')], { type: 'application/pdf' });
   }
@@ -409,5 +454,318 @@ export class PDFExportService {
     pdf.text('0', scaleX - 0.05, scaleY + 0.15);
     pdf.text('1\'', scaleX + 1, scaleY + 0.15);
     pdf.text(`Scale: 1/4" = 1'-0"`, scaleX, scaleY + 0.3);
+  }
+
+  /**
+   * Draw professional drawing elements (north arrow, legend, notes, etc.)
+   */
+  private static drawProfessionalElements(pdf: jsPDF, config: ExportConfig): void {
+    if (!config.professionalElements) return;
+
+    const elements = config.professionalElements;
+
+    // Draw North Arrow
+    if (elements.northArrow?.enabled) {
+      this.drawNorthArrow(pdf, elements.northArrow);
+    }
+
+    // Draw Enhanced Scale Bar (separate from basic scale indicator)
+    if (elements.scaleBar?.enabled) {
+      this.drawEnhancedScaleBar(pdf, elements.scaleBar);
+    }
+
+    // Draw Backing Legend
+    if (elements.legend?.enabled) {
+      this.drawBackingLegend(pdf, elements.legend);
+    }
+
+    // Draw General Notes
+    if (elements.generalNotes?.enabled) {
+      this.drawGeneralNotes(pdf, elements.generalNotes);
+    }
+
+    // Draw Revision Table
+    if (elements.revisionTable?.enabled) {
+      this.drawRevisionTable(pdf, elements.revisionTable);
+    }
+  }
+
+  /**
+   * Draw north arrow
+   */
+  private static drawNorthArrow(pdf: jsPDF, northArrow: NonNullable<ExportConfig['professionalElements']>['northArrow']): void {
+    if (!northArrow) return;
+
+    const { position, rotation, scale } = northArrow;
+    const size = 0.6 * scale; // inches
+    
+    pdf.saveGraphicsState();
+    
+    // Translate and rotate
+    pdf.setGState(new (pdf as any).GState({ transform: [1, 0, 0, 1, position.x, position.y] }));
+    
+    // Outer circle
+    pdf.setDrawColor(0, 0, 0);
+    pdf.setLineWidth(0.02);
+    pdf.circle(position.x, position.y, size / 2);
+    
+    // North arrow (pointing up, then rotated)
+    const arrowSize = size * 0.6;
+    const centerX = position.x;
+    const centerY = position.y;
+    
+    // Calculate rotated arrow points
+    const cos = Math.cos((rotation * Math.PI) / 180);
+    const sin = Math.sin((rotation * Math.PI) / 180);
+    
+    // Arrow tip (north)
+    const tipX = centerX + arrowSize * 0.4 * sin;
+    const tipY = centerY - arrowSize * 0.4 * cos;
+    
+    // Arrow base points
+    const baseLeftX = centerX - arrowSize * 0.15 * cos - arrowSize * 0.15 * sin;
+    const baseLeftY = centerY - arrowSize * 0.15 * sin + arrowSize * 0.15 * cos;
+    const baseRightX = centerX + arrowSize * 0.15 * cos - arrowSize * 0.15 * sin;
+    const baseRightY = centerY + arrowSize * 0.15 * sin + arrowSize * 0.15 * cos;
+    
+    // Draw arrow
+    pdf.setFillColor(0, 0, 0);
+    pdf.triangle(tipX, tipY, baseLeftX, baseLeftY, baseRightX, baseRightY, 'F');
+    
+    // Add "N" label
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(8);
+    pdf.setTextColor(0, 0, 0);
+    pdf.text('N', tipX, tipY - 0.05, { align: 'center' });
+    
+    pdf.restoreGraphicsState();
+  }
+
+  /**
+   * Draw enhanced scale bar
+   */
+  private static drawEnhancedScaleBar(pdf: jsPDF, scaleBar: NonNullable<ExportConfig['professionalElements']>['scaleBar']): void {
+    if (!scaleBar) return;
+
+    const { position, scale, units } = scaleBar;
+    const barLength = 2; // inches
+    const segments = 4;
+    const segmentLength = barLength / segments;
+    
+    // Background box
+    pdf.setFillColor(255, 255, 255);
+    pdf.setDrawColor(0, 0, 0);
+    pdf.setLineWidth(0.01);
+    pdf.rect(position.x - 0.1, position.y - 0.3, barLength + 0.2, 0.6, 'FD');
+    
+    // Scale bar
+    pdf.setLineWidth(0.02);
+    pdf.line(position.x, position.y, position.x + barLength, position.y);
+    
+    // Segments with alternating fill
+    for (let i = 0; i < segments; i++) {
+      const x = position.x + i * segmentLength;
+      const width = segmentLength;
+      
+      if (i % 2 === 1) {
+        pdf.setFillColor(0, 0, 0);
+        pdf.rect(x, position.y - 0.05, width, 0.1, 'F');
+      }
+      
+      // Tick marks
+      pdf.line(x, position.y - 0.1, x, position.y + 0.1);
+      
+      // Labels
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(6);
+      pdf.text(
+        units === 'imperial' ? `${i * 5}'` : `${i * 2}m`,
+        x, 
+        position.y + 0.2,
+        { align: 'center' }
+      );
+    }
+    
+    // Final tick and label
+    pdf.line(position.x + barLength, position.y - 0.1, position.x + barLength, position.y + 0.1);
+    pdf.text(
+      units === 'imperial' ? "20'" : "8m",
+      position.x + barLength, 
+      position.y + 0.2,
+      { align: 'center' }
+    );
+    
+    // Scale text
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(8);
+    pdf.text('GRAPHIC SCALE', position.x + barLength / 2, position.y - 0.2, { align: 'center' });
+  }
+
+  /**
+   * Draw backing legend
+   */
+  private static drawBackingLegend(pdf: jsPDF, legend: NonNullable<ExportConfig['professionalElements']>['legend']): void {
+    if (!legend) return;
+
+    const { position, backingTypes } = legend;
+    const itemHeight = 0.2;
+    const totalHeight = backingTypes.length * itemHeight + 0.4;
+    const width = 3;
+    
+    // Background box
+    pdf.setFillColor(255, 255, 255);
+    pdf.setDrawColor(0, 0, 0);
+    pdf.setLineWidth(0.02);
+    pdf.rect(position.x, position.y, width, totalHeight, 'FD');
+    
+    // Title
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(10);
+    pdf.setTextColor(0, 0, 0);
+    pdf.text('BACKING LEGEND', position.x + 0.1, position.y + 0.15);
+    
+    // Legend items
+    backingTypes.forEach((backing, index) => {
+      const y = position.y + 0.3 + index * itemHeight;
+      
+      // Color square
+      const colorRgb = this.hexToRgb(backing.color);
+      pdf.setFillColor(colorRgb.r, colorRgb.g, colorRgb.b);
+      pdf.setDrawColor(0, 0, 0);
+      pdf.rect(position.x + 0.1, y - 0.05, 0.15, 0.1, 'FD');
+      
+      // Text
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(8);
+      pdf.text(backing.type, position.x + 0.3, y);
+      
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(backing.description, position.x + 1.2, y);
+      
+      if (backing.count) {
+        pdf.text(`(${backing.count})`, position.x + width - 0.3, y);
+      }
+    });
+  }
+
+  /**
+   * Draw general notes
+   */
+  private static drawGeneralNotes(pdf: jsPDF, notes: NonNullable<ExportConfig['professionalElements']>['generalNotes']): void {
+    if (!notes) return;
+
+    const { position, notes: notesList, title } = notes;
+    const lineHeight = 0.15;
+    const totalHeight = notesList.length * lineHeight + 0.4;
+    const width = 4;
+    
+    // Background box
+    pdf.setFillColor(255, 255, 255);
+    pdf.setDrawColor(0, 0, 0);
+    pdf.setLineWidth(0.02);
+    pdf.rect(position.x, position.y, width, totalHeight, 'FD');
+    
+    // Title
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(10);
+    pdf.setTextColor(0, 0, 0);
+    pdf.text(title || 'GENERAL NOTES', position.x + 0.1, position.y + 0.15);
+    
+    // Notes
+    notesList.forEach((note, index) => {
+      const y = position.y + 0.3 + index * lineHeight;
+      
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(8);
+      pdf.text(`${index + 1}.`, position.x + 0.1, y);
+      pdf.text(note, position.x + 0.25, y);
+    });
+  }
+
+  /**
+   * Draw revision table
+   */
+  private static drawRevisionTable(pdf: jsPDF, revisionTable: NonNullable<ExportConfig['professionalElements']>['revisionTable']): void {
+    if (!revisionTable) return;
+
+    const { position, revisions } = revisionTable;
+    const rowHeight = 0.2;
+    const headerHeight = 0.25;
+    const totalRows = Math.max(revisions.length, 5); // Minimum 5 rows
+    const totalHeight = headerHeight + totalRows * rowHeight;
+    const colWidths = [0.4, 0.8, 2.0, 0.6]; // Rev, Date, Description, By
+    const totalWidth = colWidths.reduce((sum, width) => sum + width, 0);
+    
+    // Table border
+    pdf.setDrawColor(0, 0, 0);
+    pdf.setLineWidth(0.02);
+    pdf.rect(position.x, position.y, totalWidth, totalHeight);
+    
+    // Header
+    pdf.setFillColor(200, 200, 200);
+    pdf.rect(position.x, position.y, totalWidth, headerHeight, 'F');
+    
+    // Header text
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(8);
+    pdf.setTextColor(0, 0, 0);
+    
+    const headers = ['REV', 'DATE', 'DESCRIPTION', 'BY'];
+    let x = position.x;
+    headers.forEach((header, index) => {
+      pdf.text(header, x + colWidths[index] / 2, position.y + headerHeight / 2, { align: 'center' });
+      x += colWidths[index];
+    });
+    
+    // Column lines
+    x = position.x;
+    for (let i = 0; i < colWidths.length; i++) {
+      x += colWidths[i];
+      if (i < colWidths.length - 1) {
+        pdf.line(x, position.y, x, position.y + totalHeight);
+      }
+    }
+    
+    // Row lines
+    for (let i = 1; i <= totalRows; i++) {
+      const y = position.y + headerHeight + i * rowHeight;
+      pdf.line(position.x, y, position.x + totalWidth, y);
+    }
+    
+    // Revision data
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(7);
+    
+    revisions.forEach((revision, index) => {
+      const y = position.y + headerHeight + (index + 0.5) * rowHeight + 0.05;
+      let cellX = position.x;
+      
+      // Rev number
+      pdf.text(revision.number, cellX + colWidths[0] / 2, y, { align: 'center' });
+      cellX += colWidths[0];
+      
+      // Date
+      pdf.text(revision.date, cellX + colWidths[1] / 2, y, { align: 'center' });
+      cellX += colWidths[1];
+      
+      // Description
+      pdf.text(revision.description, cellX + 0.05, y);
+      cellX += colWidths[2];
+      
+      // By
+      pdf.text(revision.by, cellX + colWidths[3] / 2, y, { align: 'center' });
+    });
+  }
+
+  /**
+   * Helper function to convert hex color to RGB
+   */
+  private static hexToRgb(hex: string): { r: number; g: number; b: number } {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : { r: 128, g: 128, b: 128 };
   }
 }

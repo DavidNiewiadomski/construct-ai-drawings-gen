@@ -351,3 +351,45 @@ export interface StandardDetail {
   createdAt: string;
   updatedAt: string;
 }
+
+// Professional drawing elements
+export interface ProfessionalDrawingElements {
+  northArrow: {
+    enabled: boolean;
+    position: Point;
+    rotation: number;
+    scale: number;
+  };
+  scaleBar: {
+    enabled: boolean;
+    position: Point;
+    scale: number;
+    units: 'imperial' | 'metric';
+  };
+  legend: {
+    enabled: boolean;
+    position: Point;
+    backingTypes: Array<{
+      type: string;
+      color: string;
+      description: string;
+      count?: number;
+    }>;
+  };
+  generalNotes: {
+    enabled: boolean;
+    position: Point;
+    notes: string[];
+    title?: string;
+  };
+  revisionTable: {
+    enabled: boolean;
+    position: Point;
+    revisions: Array<{
+      number: string;
+      date: string;
+      description: string;
+      by: string;
+    }>;
+  };
+}

@@ -16,14 +16,17 @@ import {
   CheckCircle,
   FileText,
   Settings,
-  Palette
+  Palette,
+  Compass
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FormatSelectionStep } from './FormatSelectionStep';
 import { PageSetupStep } from './PageSetupStep';
 import { TitleBlockStep } from './TitleBlockStep';
 import { ExportPreviewStep } from './ExportPreviewStep';
+import { ProfessionalElementsStep } from './ProfessionalElementsStep';
 import { ExportQueueService } from '@/services/exportQueueService';
+import { ProfessionalDrawingElements } from '@/types';
 
 export interface ExportFormat {
   id: 'pdf' | 'dwg' | 'csv';
@@ -74,6 +77,7 @@ export interface ExportSettings {
   includeBackings: boolean;
   quality: 'draft' | 'standard' | 'high';
   colorMode: 'color' | 'grayscale' | 'blackwhite';
+  professionalElements?: Partial<ProfessionalDrawingElements>;
 }
 
 interface ExportWizardProps {
@@ -186,6 +190,12 @@ export function ExportWizard({
       description: 'Add drawing information'
     },
     { 
+      id: 'professional', 
+      title: 'Professional Elements', 
+      icon: Compass,
+      description: 'Add north arrow, legend, notes'
+    },
+    { 
       id: 'preview', 
       title: 'Preview & Export', 
       icon: CheckCircle,
@@ -199,6 +209,7 @@ export function ExportWizard({
     
     if (step.id === 'setup' && !exportSettings.format.requiresPageSetup) return false;
     if (step.id === 'titleblock' && !exportSettings.format.requiresTitleBlock) return false;
+    if (step.id === 'professional' && exportSettings.format.id !== 'pdf') return false;
     
     return true;
   });
@@ -274,6 +285,14 @@ export function ExportWizard({
           <TitleBlockStep
             titleBlock={exportSettings.titleBlock}
             onTitleBlockChange={(titleBlock) => updateSettings({ titleBlock })}
+          />
+        );
+      case 'professional':
+        return (
+          <ProfessionalElementsStep
+            elements={exportSettings.professionalElements || {}}
+            onElementsChange={(professionalElements) => updateSettings({ professionalElements })}
+            backings={backings}
           />
         );
       case 'preview':
