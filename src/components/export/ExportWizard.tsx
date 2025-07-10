@@ -23,6 +23,7 @@ import { FormatSelectionStep } from './FormatSelectionStep';
 import { PageSetupStep } from './PageSetupStep';
 import { TitleBlockStep } from './TitleBlockStep';
 import { ExportPreviewStep } from './ExportPreviewStep';
+import { ExportQueueService } from '@/services/exportQueueService';
 
 export interface ExportFormat {
   id: 'pdf' | 'dwg' | 'csv';
@@ -221,11 +222,24 @@ export function ExportWizard({
   };
 
   const handleExport = async () => {
-    if (!onExport || !exportSettings.format) return;
+    if (!exportSettings.format) return;
     
     try {
       setIsExporting(true);
-      await onExport(exportSettings as ExportSettings);
+      
+      const exportQueue = ExportQueueService.getInstance();
+      const filename = `${exportSettings.titleBlock?.drawingTitle || 'export'}-${exportSettings.titleBlock?.drawingNumber || Date.now()}.${exportSettings.format.id}`;
+      
+      // Add job to queue instead of direct export
+      await exportQueue.addJob(
+        exportSettings.format.id,
+        {
+          ...exportSettings,
+          backings
+        },
+        filename
+      );
+      
       onOpenChange?.(false);
     } catch (error) {
       console.error('Export failed:', error);
