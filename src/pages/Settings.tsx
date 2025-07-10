@@ -1,10 +1,17 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Settings2, Database, FileText, Brain, Info } from 'lucide-react';
-import { StandardsLibrary } from '@/components/settings/StandardsLibrary';
+import { Ruler, FileText, Settings as SettingsIcon, Info } from 'lucide-react';
+import { BackingStandardsLibrary } from '@/components/settings/BackingStandardsLibrary';
 import { ExportTemplates } from '@/components/settings/ExportTemplates';
 import { AIConfig } from '@/components/settings/AIConfig';
+
+const settingsTabs = [
+  { id: 'standards', label: 'Backing Standards', icon: '📏' },
+  { id: 'templates', label: 'Export Templates', icon: '📄' },
+  { id: 'preferences', label: 'Preferences', icon: '⚙️' },
+  { id: 'about', label: 'About', icon: 'ℹ️' }
+];
 
 export default function Settings() {
   return (
@@ -13,49 +20,26 @@ export default function Settings() {
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-2">
-              <Settings2 className="h-8 w-8" />
+              <SettingsIcon className="h-8 w-8" />
               <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
             </div>
             <p className="text-muted-foreground">
-              Configure backing standards, export templates, and AI detection settings.
+              Configure backing standards, export templates, preferences, and system information.
             </p>
           </div>
 
           <Tabs defaultValue="standards" className="space-y-6">
             <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="standards" className="flex items-center gap-2">
-                <Database className="h-4 w-4" />
-                Backing Standards
-              </TabsTrigger>
-              <TabsTrigger value="templates" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Export Templates
-              </TabsTrigger>
-              <TabsTrigger value="ai" className="flex items-center gap-2">
-                <Brain className="h-4 w-4" />
-                AI Configuration
-              </TabsTrigger>
-              <TabsTrigger value="about" className="flex items-center gap-2">
-                <Info className="h-4 w-4" />
-                About
-              </TabsTrigger>
+              {settingsTabs.map((tab) => (
+                <TabsTrigger key={tab.id} value={tab.id} className="flex items-center gap-2">
+                  <span className="text-base">{tab.icon}</span>
+                  <span className="hidden sm:inline">{tab.label}</span>
+                </TabsTrigger>
+              ))}
             </TabsList>
 
             <TabsContent value="standards" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Database className="h-5 w-5" />
-                    Backing Standards Library
-                  </CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    Manage your backing requirements and installation standards.
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  <StandardsLibrary />
-                </CardContent>
-              </Card>
+              <BackingStandardsLibrary />
             </TabsContent>
 
             <TabsContent value="templates" className="space-y-6">
@@ -75,15 +59,15 @@ export default function Settings() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="ai" className="space-y-6">
+            <TabsContent value="preferences" className="space-y-6">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Brain className="h-5 w-5" />
-                    AI Configuration
+                    <SettingsIcon className="h-5 w-5" />
+                    Preferences
                   </CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    Configure AI detection settings and processing preferences.
+                    Configure application preferences and behavior settings.
                   </p>
                 </CardHeader>
                 <CardContent>
