@@ -39,6 +39,7 @@ import { useDrawingViewer } from '@/hooks/useDrawingViewer';
 import { usePanAndZoom } from '@/hooks/usePanAndZoom';
 import { useBackingPlacement } from '@/hooks/useBackingPlacement';
 import { useMeasurements } from '@/hooks/useMeasurements';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { coordinateSystem } from '@/utils/coordinateSystem';
 import { useToast } from '@/hooks/use-toast';
 
@@ -404,60 +405,62 @@ export function DrawingViewer({ drawingUrl, backings, onBackingsChange }: Drawin
     reader.readAsText(file);
   }, [handleBackingsChangeWithHistory, toast]);
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        switch (e.key) {
-          case 'c':
-            e.preventDefault();
-            handleCopy();
-            break;
-          case 'v':
-            e.preventDefault();
-            handlePaste();
-            break;
-          case 'd':
-            e.preventDefault();
-            handleDuplicate();
-            break;
-          case 'z':
-            e.preventDefault();
-            if (e.shiftKey) {
-              handleRedo();
-            } else {
-              handleUndo();
-            }
-            break;
-          case 'y':
-            e.preventDefault();
-            handleRedo();
-            break;
-          case 's':
-            e.preventDefault();
-            handleSave();
-            break;
-          case 'o':
-            e.preventDefault();
-            handleLoad();
-            break;
-          case 'a':
-            e.preventDefault();
-            setSelectedBackings(backings.map(b => b.id));
-            break;
-        }
-      } else if (e.key === 'Delete' || e.key === 'Backspace') {
-        e.preventDefault();
-        handleDelete();
-      } else if (e.key === 'Escape') {
-        setSelectedBackings([]);
-        selectBacking(null);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleCopy, handlePaste, handleDuplicate, handleUndo, handleRedo, handleSave, handleLoad, handleDelete, backings, selectBacking]);
+  // Keyboard shortcuts using the hook
+  const { setTool } = useViewerStore();
+  
+  useKeyboardShortcuts({
+    onUndo: handleUndo,
+    onRedo: handleRedo,
+    onCopy: handleCopy,
+    onPaste: handlePaste,
+    onDuplicate: handleDuplicate,
+    onSave: handleSave,
+    onDelete: handleDelete,
+    onSelectAll: () => setSelectedBackings(backings.map(b => b.id)),
+    onEscape: () => {
+      setSelectedBackings([]);
+      selectBacking(null);
+    },
+    // Tool shortcuts
+    onSelectTool: () => setTool('select'),
+    onPanTool: () => setTool('pan'), 
+    onMeasureTool: () => setTool('measure'),
+    onAddTool: () => setTool('add'),
+    // View shortcuts
+    onZoomIn: () => {
+      // TODO: Implement zoom in
+      console.log('Zoom in');
+    },
+    onZoomOut: () => {
+      // TODO: Implement zoom out
+      console.log('Zoom out');
+    },
+    onZoomFit: handleZoomToFit,
+    onZoomReset: () => {
+      // TODO: Implement zoom reset
+      console.log('Zoom reset');
+    },
+    onToggleGrid: () => {
+      // TODO: Implement grid toggle
+      console.log('Toggle grid');
+    },
+    // Alignment shortcuts
+    onAlignLeft: () => alignBackings('left'),
+    onAlignRight: () => alignBackings('right'),
+    onAlignTop: () => alignBackings('top'),
+    onAlignBottom: () => alignBackings('bottom'),
+    onAlignCenterHorizontal: () => alignBackings('center-h'),
+    onAlignCenterVertical: () => alignBackings('center-v'),
+    // Project shortcuts
+    onOpenProjectManager: () => {
+      // TODO: Open project manager
+      console.log('Open project manager');
+    },
+    onNewProject: () => {
+      // TODO: New project
+      console.log('New project');
+    }
+  });
 
   // Initialize drawing URL loading state
   useEffect(() => {
