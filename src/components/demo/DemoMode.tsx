@@ -26,39 +26,72 @@ export function DemoMode() {
   const generateDemoBackings = () => [
     {
       id: 'demo-1',
+      componentId: 'comp-1',
       x: 150,
       y: 200,
       width: 80,
       height: 40,
-      backingType: 'Plywood 3/4"',
-      componentType: 'TV Mount',
-      location: { z: 48 },
+      backingType: '3/4_plywood',
+      dimensions: {
+        width: 80,
+        height: 40,
+        thickness: 0.75
+      },
+      location: {
+        x: 150,
+        y: 200,
+        z: 48
+      },
+      orientation: 0,
       status: 'ai_detected',
-      confidence: 0.95
+      confidence: 0.95,
+      rules: []
     },
     {
       id: 'demo-2',
+      componentId: 'comp-2',
       x: 300,
       y: 150,
       width: 60,
       height: 60,
-      backingType: 'Blocking 2x4',
-      componentType: 'Electrical Panel',
-      location: { z: 60 },
+      backingType: 'blocking',
+      dimensions: {
+        width: 60,
+        height: 60,
+        thickness: 3.5
+      },
+      location: {
+        x: 300,
+        y: 150,
+        z: 60
+      },
+      orientation: 0,
       status: 'ai_detected',
-      confidence: 0.88
+      confidence: 0.88,
+      rules: []
     },
     {
       id: 'demo-3',
+      componentId: 'comp-3',
       x: 200,
       y: 350,
       width: 100,
       height: 30,
-      backingType: 'Metal Plate',
-      componentType: 'Heavy Equipment',
-      location: { z: 72 },
+      backingType: 'steel_plate',
+      dimensions: {
+        width: 100,
+        height: 30,
+        thickness: 0.25
+      },
+      location: {
+        x: 200,
+        y: 350,
+        z: 72
+      },
+      orientation: 0,
       status: 'user_modified',
-      confidence: 1.0
+      confidence: 1.0,
+      rules: []
     }
   ];
 
