@@ -228,6 +228,12 @@ export function BackingOverlay({
         const isHovered = hoveredBackingId === backing.id;
         const { location, dimensions, status } = backing;
 
+        // Safety check for dimensions
+        if (!dimensions || !location) {
+          console.warn('Backing missing dimensions or location:', backing);
+          return null;
+        }
+
         // Convert PDF coordinates to screen coordinates
         const screenPos = coordinateSystem.pdfToScreen(location);
         const pdfWidth = coordinateSystem.inchesToPdfUnits(dimensions.width);
