@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FileUploadPanel } from '@/components/upload/FileUploadPanel';
 import { DrawingViewer } from '@/components/viewer/DrawingViewer';
 import { MobileViewer } from '@/components/mobile/MobileViewer';
@@ -20,6 +21,7 @@ export default function Home() {
   const [showHelp, setShowHelp] = useState(false);
   const [startTutorial, setStartTutorial] = useState(false);
   
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { showShortcuts, setShowShortcuts } = useKeyboardShortcuts();
 
@@ -96,7 +98,7 @@ export default function Home() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => window.location.href = '/integrations'}
+                  onClick={() => navigate('/integrations')}
                 >
                   <Cloud className="h-4 w-4 mr-2" />
                   Integrations
@@ -105,7 +107,7 @@ export default function Home() {
                 <Button
                   variant="outline" 
                   size="sm"
-                  onClick={() => window.location.href = '/settings'}
+                  onClick={() => navigate('/settings')}
                 >
                   <Settings className="h-4 w-4 mr-2" />
                   Settings
