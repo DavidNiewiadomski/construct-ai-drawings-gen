@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Process from "./pages/Process";
 import Settings from "./pages/Settings";
+import { IntegrationHub } from "./components/integrations/IntegrationHub";
 
 const App = () => (
   <TooltipProvider>
@@ -13,6 +14,7 @@ const App = () => (
     <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/integrations" element={<IntegrationHub />} />
           <Route path="/process" element={<Process />} />
           <Route path="/settings" element={<Settings />} />
         </Routes>

@@ -9,7 +9,7 @@ import { UploadedFile, BackingPlacement } from '@/types';
 import { FileService } from '@/services/fileService';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
-import { HelpCircle, Keyboard } from 'lucide-react';
+import { HelpCircle, Keyboard, Cloud, Settings } from 'lucide-react';
 
 const fileService = new FileService();
 
@@ -92,6 +92,25 @@ export default function Home() {
               </div>
               
               <div className="flex items-center space-x-3">
+                {/* Navigation buttons */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.location.href = '/integrations'}
+                >
+                  <Cloud className="h-4 w-4 mr-2" />
+                  Integrations
+                </Button>
+                
+                <Button
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => window.location.href = '/settings'}
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </Button>
+                
                 {/* Help & Tutorial buttons */}
                 <Button
                   variant="outline"
