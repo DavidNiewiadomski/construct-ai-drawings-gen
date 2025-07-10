@@ -17,7 +17,10 @@ import { useToast } from '@/hooks/use-toast';
 
 export function DemoMode() {
   const [isLoading, setIsLoading] = useState(false);
-  const [demoLoaded, setDemoLoaded] = useState(false);
+  const [demoLoaded, setDemoLoaded] = useState(() => {
+    // Check if demo data exists on mount
+    return localStorage.getItem('demo-project') !== null;
+  });
   const { toast } = useToast();
 
   const generateDemoBackings = () => [
@@ -161,6 +164,9 @@ export function DemoMode() {
       localStorage.setItem('demo-project', JSON.stringify(demoProject));
       setDemoLoaded(true);
       
+      // Dispatch event to notify other components
+      window.dispatchEvent(new CustomEvent('demoLoaded'));
+      
       toast({
         title: "Demo project loaded successfully!",
         description: "Explore the AI-powered backing detection features"
@@ -217,6 +223,8 @@ export function DemoMode() {
             onClick={() => {
               localStorage.removeItem('demo-project');
               setDemoLoaded(false);
+              // Dispatch event to notify other components
+              window.dispatchEvent(new CustomEvent('demoLoaded'));
               toast({
                 title: "Demo project cleared"
               });

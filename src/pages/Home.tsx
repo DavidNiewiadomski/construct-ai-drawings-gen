@@ -34,8 +34,30 @@ export default function Home() {
       if (readyFile) {
         setSelectedFile(readyFile);
       }
+      
+      // Load demo backing placements if available
+      const demoData = localStorage.getItem('demo-project');
+      if (demoData) {
+        const demo = JSON.parse(demoData);
+        if (demo.backings && Array.isArray(demo.backings)) {
+          setBackings(demo.backings);
+        }
+      }
     };
     loadFiles();
+    
+    // Listen for demo data changes
+    const handleStorageChange = () => {
+      loadFiles();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('demoLoaded', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('demoLoaded', handleStorageChange);
+    };
   }, []);
 
   // Auto-select first ready file when files change

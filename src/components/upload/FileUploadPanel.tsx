@@ -10,6 +10,7 @@ import { useUploadStore } from '@/stores/uploadStore';
 import { DraggableFileCard } from './DraggableFileCard';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { FilePreview } from './FilePreview';
+import { DemoMode } from '@/components/demo/DemoMode';
 
 interface FileUploadPanelProps {
   files: UploadedFile[];
@@ -303,21 +304,37 @@ export function FileUploadPanel({ files, onFilesChange, onStartTutorial }: FileU
             </div>
           )}
           
-          {/* Empty state */}
+          {/* Empty state with Demo Mode */}
           {files.length === 0 && uploadFiles.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground animate-fade-in">
-              <div className="relative mb-6">
-                <FolderOpen className="h-16 w-16 mx-auto opacity-30" />
-                <FileText className="h-8 w-8 absolute top-2 right-4 opacity-20" />
+            <div className="space-y-6 animate-fade-in">
+              {/* Demo Mode Component */}
+              <DemoMode />
+              
+              {/* Or Separator */}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">Or</span>
+                </div>
               </div>
-              <h3 className="text-lg font-medium mb-2">No files uploaded yet</h3>
-              <p className="text-sm mb-4">
-                Get started by dragging and dropping your construction drawings
-              </p>
-              <div className="space-y-2 text-xs">
-                <p>✓ PDF drawings with detailed plans</p>
-                <p>✓ CAD files (DWG, DXF, IFC, RVT)</p>
-                <p>✓ Up to 100MB per file</p>
+              
+              {/* Upload Help */}
+              <div className="text-center py-6 text-muted-foreground">
+                <div className="relative mb-6">
+                  <FolderOpen className="h-16 w-16 mx-auto opacity-30" />
+                  <FileText className="h-8 w-8 absolute top-2 right-4 opacity-20" />
+                </div>
+                <h3 className="text-lg font-medium mb-2">Upload your own files</h3>
+                <p className="text-sm mb-4">
+                  Get started by dragging and dropping your construction drawings
+                </p>
+                <div className="space-y-2 text-xs">
+                  <p>✓ PDF drawings with detailed plans</p>
+                  <p>✓ CAD files (DWG, DXF, IFC, RVT)</p>
+                  <p>✓ Up to 100MB per file</p>
+                </div>
               </div>
             </div>
           )}

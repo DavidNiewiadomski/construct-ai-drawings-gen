@@ -127,6 +127,30 @@ export class FileService {
   }
 
   private getStoredFiles(): UploadedFile[] {
+    // First check for demo data
+    const demoData = localStorage.getItem('demo-project');
+    if (demoData) {
+      const demo = JSON.parse(demoData);
+      if (demo.files && Array.isArray(demo.files)) {
+        // Convert demo files to UploadedFile format
+        return demo.files.map((file: any) => ({
+          id: file.id,
+          filename: file.name,
+          fileType: file.type,
+          fileUrl: '/placeholder.svg', // Use placeholder for demo
+          fileSize: file.size,
+          uploadDate: file.uploadedAt,
+          status: 'ready' as const,
+          metadata: {
+            pageCount: file.metadata?.pages || 1,
+            dimensions: file.metadata?.dimensions || { width: 800, height: 600 },
+            scale: '1/4" = 1\'-0"'
+          }
+        }));
+      }
+    }
+    
+    // Fallback to regular stored files
     const stored = localStorage.getItem('uploadedFiles');
     return stored ? JSON.parse(stored) : [];
   }
