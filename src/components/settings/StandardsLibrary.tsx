@@ -14,7 +14,9 @@ import {
 import { BackingStandard } from '@/types';
 import { settingsService } from '@/services/settingsService';
 import { StandardsForm } from './StandardsForm';
+import { StandardDetailsLibrary } from './StandardDetailsLibrary';
 import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export function StandardsLibrary() {
   const [standards, setStandards] = useState<BackingStandard[]>([]);
@@ -151,239 +153,261 @@ export function StandardsLibrary() {
 
   const categories = Array.from(new Set(standards.map(s => s.category)));
 
+  const handleAddDetailToProject = (detail: any) => {
+    toast({
+      title: "Detail Added",
+      description: `${detail.name} has been added to your project`,
+    });
+  };
+
   return (
     <div className="space-y-6">
-      {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="flex flex-col sm:flex-row gap-3 flex-1">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search standards..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 w-full sm:w-[300px]"
-            />
-          </div>
-          
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Filter by category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex gap-2">
-          <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => setEditingStandard(null)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Standard
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingStandard ? 'Edit Backing Standard' : 'Add New Backing Standard'}
-                </DialogTitle>
-              </DialogHeader>
-              <StandardsForm
-                standard={editingStandard}
-                onSave={handleSaveStandard}
-                onCancel={() => {
-                  setIsFormOpen(false);
-                  setEditingStandard(null);
-                }}
-              />
-            </DialogContent>
-          </Dialog>
-
-          <Button variant="outline" onClick={handleExportCSV}>
-            <Download className="h-4 w-4 mr-2" />
-            Export CSV
-          </Button>
-
-          <Button variant="outline" asChild>
-            <label>
-              <Upload className="h-4 w-4 mr-2" />
-              Import CSV
-              <input
-                type="file"
-                accept=".csv"
-                onChange={handleImportCSV}
-                className="hidden"
-              />
-            </label>
-          </Button>
-        </div>
-      </div>
-
-      {/* Statistics */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold">{standards.length}</div>
-            <p className="text-xs text-muted-foreground">Total Standards</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold">{categories.length}</div>
-            <p className="text-xs text-muted-foreground">Categories</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold">
-              {new Set(standards.map(s => s.componentType)).size}
-            </div>
-            <p className="text-xs text-muted-foreground">Component Types</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold">
-              {new Set(standards.map(s => s.backing.material)).size}
-            </div>
-            <p className="text-xs text-muted-foreground">Backing Types</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Standards Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Standards ({filteredStandards.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center h-32">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Component Type</TableHead>
-                    <TableHead>Conditions</TableHead>
-                    <TableHead>Backing</TableHead>
-                    <TableHead>Height AFF</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Last Updated</TableHead>
-                    <TableHead className="w-[100px]">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredStandards.map((standard) => (
-                    <TableRow key={standard.id}>
-                      <TableCell className="font-medium">
-                        {standard.componentType}
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          {standard.conditions.weightMin !== undefined && (
-                            <Badge variant="outline" className="text-xs">
-                              {standard.conditions.weightMin}-{standard.conditions.weightMax} lbs
-                            </Badge>
-                          )}
-                          {standard.conditions.widthMin !== undefined && (
-                            <Badge variant="outline" className="text-xs">
-                              {standard.conditions.widthMin}-{standard.conditions.widthMax}"
-                            </Badge>
-                          )}
-                          {standard.conditions.custom && (
-                            <Badge variant="outline" className="text-xs">
-                              {standard.conditions.custom}
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="font-medium">{standard.backing.material}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {standard.backing.width}" × {standard.backing.height}"
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {standard.backing.fasteners}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{standard.heightAFF}"</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{standard.category}</Badge>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {new Date(standard.updatedAt).toLocaleDateString()}
-                        <br />
-                        by {standard.updatedBy}
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setEditingStandard(standard);
-                                setIsFormOpen(true);
-                              }}
-                            >
-                              <Edit className="h-4 w-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                const newStandard = {
-                                  ...standard,
-                                  id: Date.now().toString(),
-                                  updatedAt: new Date().toISOString(),
-                                  updatedBy: 'User',
-                                };
-                                setEditingStandard(newStandard);
-                                setIsFormOpen(true);
-                              }}
-                            >
-                              <Copy className="h-4 w-4 mr-2" />
-                              Duplicate
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleDeleteStandard(standard.id)}
-                              className="text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
+      <Tabs defaultValue="standard-details" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="standard-details">Standard Details</TabsTrigger>
+          <TabsTrigger value="custom-standards">Custom Standards</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="standard-details" className="space-y-6">
+          <StandardDetailsLibrary 
+            onAddToProject={handleAddDetailToProject}
+          />
+        </TabsContent>
+        
+        <TabsContent value="custom-standards" className="space-y-6">
+          {/* Toolbar */}
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            <div className="flex flex-col sm:flex-row gap-3 flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search standards..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 w-full sm:w-[300px]"
+                />
+              </div>
+              
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Filter by category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
                   ))}
-                </TableBody>
-              </Table>
+                </SelectContent>
+              </Select>
             </div>
-          )}
 
-          {!isLoading && filteredStandards.length === 0 && (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">No standards found matching your criteria.</p>
+            <div className="flex gap-2">
+              <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={() => setEditingStandard(null)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Standard
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {editingStandard ? 'Edit Backing Standard' : 'Add New Backing Standard'}
+                    </DialogTitle>
+                  </DialogHeader>
+                  <StandardsForm
+                    standard={editingStandard}
+                    onSave={handleSaveStandard}
+                    onCancel={() => {
+                      setIsFormOpen(false);
+                      setEditingStandard(null);
+                    }}
+                  />
+                </DialogContent>
+              </Dialog>
+
+              <Button variant="outline" onClick={handleExportCSV}>
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </Button>
+
+              <Button variant="outline" asChild>
+                <label>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Import CSV
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={handleImportCSV}
+                    className="hidden"
+                  />
+                </label>
+              </Button>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+
+          {/* Statistics */}
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-2xl font-bold">{standards.length}</div>
+                <p className="text-xs text-muted-foreground">Total Standards</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-2xl font-bold">{categories.length}</div>
+                <p className="text-xs text-muted-foreground">Categories</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-2xl font-bold">
+                  {new Set(standards.map(s => s.componentType)).size}
+                </div>
+                <p className="text-xs text-muted-foreground">Component Types</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-2xl font-bold">
+                  {new Set(standards.map(s => s.backing.material)).size}
+                </div>
+                <p className="text-xs text-muted-foreground">Backing Types</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Standards Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Custom Standards ({filteredStandards.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="flex items-center justify-center h-32">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Component Type</TableHead>
+                        <TableHead>Conditions</TableHead>
+                        <TableHead>Backing</TableHead>
+                        <TableHead>Height AFF</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Last Updated</TableHead>
+                        <TableHead className="w-[100px]">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredStandards.map((standard) => (
+                        <TableRow key={standard.id}>
+                          <TableCell className="font-medium">
+                            {standard.componentType}
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              {standard.conditions.weightMin !== undefined && (
+                                <Badge variant="outline" className="text-xs">
+                                  {standard.conditions.weightMin}-{standard.conditions.weightMax} lbs
+                                </Badge>
+                              )}
+                              {standard.conditions.widthMin !== undefined && (
+                                <Badge variant="outline" className="text-xs">
+                                  {standard.conditions.widthMin}-{standard.conditions.widthMax}"
+                                </Badge>
+                              )}
+                              {standard.conditions.custom && (
+                                <Badge variant="outline" className="text-xs">
+                                  {standard.conditions.custom}
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div className="font-medium">{standard.backing.material}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {standard.backing.width}" × {standard.backing.height}"
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {standard.backing.fasteners}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>{standard.heightAFF}"</TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">{standard.category}</Badge>
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {new Date(standard.updatedAt).toLocaleDateString()}
+                            <br />
+                            by {standard.updatedBy}
+                          </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="bg-popover border shadow-md">
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setEditingStandard(standard);
+                                    setIsFormOpen(true);
+                                  }}
+                                >
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    const newStandard = {
+                                      ...standard,
+                                      id: Date.now().toString(),
+                                      updatedAt: new Date().toISOString(),
+                                      updatedBy: 'User',
+                                    };
+                                    setEditingStandard(newStandard);
+                                    setIsFormOpen(true);
+                                  }}
+                                >
+                                  <Copy className="h-4 w-4 mr-2" />
+                                  Duplicate
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => handleDeleteStandard(standard.id)}
+                                  className="text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+
+              {!isLoading && filteredStandards.length === 0 && (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No standards found matching your criteria.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

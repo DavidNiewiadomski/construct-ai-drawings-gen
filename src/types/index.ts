@@ -315,3 +315,39 @@ export interface AIBackingPlacement {
   notes?: string;
   drawingId: string;
 }
+
+export interface StandardDetail {
+  id: string;
+  name: string;
+  description: string;
+  category: 'tv_mount' | 'grab_bar' | 'cabinet' | 'equipment' | 'fixture' | 'structural';
+  image?: string;
+  dwgFile?: string;
+  specifications: {
+    backingType: string;
+    dimensions: {
+      width: number;
+      height: number;
+      thickness: number;
+    };
+    heightAFF: number;
+    fasteners: string;
+    spacing: number;
+    loadRating: number; // lbs
+    notes: string[];
+  };
+  applicability: {
+    componentTypes: string[];
+    weightRange: { min: number; max: number };
+    sizeRange: { minWidth: number; maxWidth: number; minHeight: number; maxHeight: number };
+    wallTypes: string[];
+  };
+  references: {
+    code?: string;
+    standard?: string;
+    manufacturer?: string;
+  };
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+}
