@@ -8,7 +8,8 @@ import { formatDistanceToNow } from 'date-fns';
 interface CommentListProps {
   comments: Array<{
     id: string;
-    position: { x: number; y: number };
+    position_x: number;
+    position_y: number;
     thread: Array<{
       id: string;
       text: string;
@@ -16,8 +17,8 @@ interface CommentListProps {
       timestamp: Date;
     }>;
     status: 'open' | 'resolved';
-    created_by: string;
-    created_at: Date;
+    createdBy: string;
+    createdAt: Date;
   }>;
   selectedComment: any;
   onSelectComment: (comment: any) => void;
@@ -74,7 +75,7 @@ export function CommentList({
               <div className="flex items-start gap-3">
                 <Avatar className="w-8 h-8 flex-shrink-0">
                   <AvatarFallback className="text-xs">
-                    {getAuthorInitials(comment.created_by)}
+                    {getAuthorInitials(comment.createdBy)}
                   </AvatarFallback>
                 </Avatar>
                 
@@ -102,14 +103,14 @@ export function CommentList({
                   
                   <div className="flex items-center gap-4 text-xs text-muted-foreground">
                     <div className="flex items-center gap-1">
-                      <span>{getAuthorName(comment.created_by)}</span>
+                      <span>{getAuthorName(comment.createdBy)}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      {formatDistanceToNow(comment.created_at, { addSuffix: true })}
+                      {formatDistanceToNow(comment.createdAt, { addSuffix: true })}
                     </div>
                     <div className="flex items-center gap-1">
-                      <span>@({Math.round(comment.position.x)}, {Math.round(comment.position.y)})</span>
+                      <span>@({Math.round(comment.position_x)}, {Math.round(comment.position_y)})</span>
                     </div>
                   </div>
                 </div>

@@ -12,13 +12,14 @@ import { useToast } from '@/hooks/use-toast';
 
 interface Comment {
   id: string;
-  position: { x: number; y: number };
-  drawing_id: string;
+  position_x: number;
+  position_y: number;
+  drawingId: string;
   thread: CommentMessage[];
   status: 'open' | 'resolved';
-  created_by: string;
-  created_at: Date;
-  updated_at: Date;
+  createdBy: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 interface CommentMessage {
@@ -78,8 +79,9 @@ export function CommentSystem({ drawingId, currentUser, scale, pan }: CommentSys
 
       const formattedComments = commentsData?.map(comment => ({
         id: comment.id,
-        position: { x: comment.position_x, y: comment.position_y },
-        drawing_id: comment.drawing_id,
+        position_x: comment.position_x,
+        position_y: comment.position_y,
+        drawingId: comment.drawing_id,
         thread: comment.comment_messages.map((msg: any) => ({
           id: msg.id,
           text: msg.text,
@@ -89,9 +91,9 @@ export function CommentSystem({ drawingId, currentUser, scale, pan }: CommentSys
           mentions: msg.mentions || []
         })),
         status: comment.status as 'open' | 'resolved',
-        created_by: comment.created_by,
-        created_at: new Date(comment.created_at),
-        updated_at: new Date(comment.updated_at)
+        createdBy: comment.created_by,
+        createdAt: new Date(comment.created_at),
+        updatedAt: new Date(comment.updated_at)
       })) || [];
 
       setComments(formattedComments);
@@ -370,13 +372,24 @@ export function CommentSystem({ drawingId, currentUser, scale, pan }: CommentSys
         onClick={handleCanvasClick}
       >
         {comments.map((comment, index) => (
-          <CommentPin
+          <div
             key={comment.id}
-            comment={comment}
-            number={index + 1}
-            isSelected={selectedComment?.id === comment.id}
+            className={`absolute w-8 h-8 rounded-full border-2 ${
+              comment.status === 'resolved' 
+                ? 'bg-green-500 border-green-600' 
+                : selectedComment?.id === comment.id 
+                ? 'bg-blue-500 border-blue-600' 
+                : 'bg-red-500 border-red-600'
+            } text-white font-bold text-sm flex items-center justify-center cursor-pointer hover:scale-110 transition-transform z-10 pointer-events-auto`}
+            style={{
+              left: comment.position_x,
+              top: comment.position_y,
+              transform: 'translate(-50%, -50%)',
+            }}
             onClick={() => setSelectedComment(comment)}
-          />
+          >
+            {index + 1}
+          </div>
         ))}
       </div>
 

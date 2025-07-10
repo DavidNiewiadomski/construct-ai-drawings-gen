@@ -20,8 +20,8 @@ interface CommentThreadProps {
       mentions?: string[];
     }>;
     status: 'open' | 'resolved';
-    created_by: string;
-    created_at: Date;
+    createdBy: string;
+    createdAt: Date;
   };
   currentUser: {
     id: string;
@@ -213,7 +213,7 @@ export function CommentThread({
               </span>
             </div>
             <p className="text-xs text-green-600 mt-1">
-              Resolved {formatDistanceToNow(comment.created_at, { addSuffix: true })}
+              Resolved {formatDistanceToNow(comment.createdAt, { addSuffix: true })}
             </p>
           </div>
         )}
