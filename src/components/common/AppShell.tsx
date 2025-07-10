@@ -101,11 +101,11 @@ export function AppShell({ children }: AppShellProps) {
       
       {/* Global modals */}
       {showShortcuts && (
-        <KeyboardShortcuts onClose={() => setShowShortcuts(false)} />
+        <KeyboardShortcuts isOpen={true} onClose={() => setShowShortcuts(false)} />
       )}
       
       {showHelp && (
-        <HelpSystem onClose={() => setShowHelp(false)} />
+        <HelpSystem isOpen={true} onClose={() => setShowHelp(false)} />
       )}
       
       {/* Toast notifications */}

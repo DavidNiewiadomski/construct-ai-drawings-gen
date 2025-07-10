@@ -161,13 +161,16 @@ export function DemoMode() {
       localStorage.setItem('demo-project', JSON.stringify(demoProject));
       setDemoLoaded(true);
       
-      toast.success('Demo project loaded successfully!', {
-        description: 'Explore the AI-powered backing detection features'
+      toast({
+        title: "Demo project loaded successfully!",
+        description: "Explore the AI-powered backing detection features"
       });
       
     } catch (error) {
-      toast.error('Failed to load demo project', {
-        description: 'Please try again or contact support'
+      toast({
+        title: "Failed to load demo project",
+        description: "Please try again or contact support",
+        variant: "destructive"
       });
     } finally {
       setIsLoading(false);
@@ -214,7 +217,9 @@ export function DemoMode() {
             onClick={() => {
               localStorage.removeItem('demo-project');
               setDemoLoaded(false);
-              toast.info('Demo project cleared');
+              toast({
+                title: "Demo project cleared"
+              });
             }}
           >
             Clear Demo
